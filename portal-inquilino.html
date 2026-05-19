@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Mi Portal · Viviendas Virtuo</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Fraunces:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--b:#1E4DB7;--b2:#2E86DE;--g:#27AE60;--r:#E74C3C;--y:#F39C12;--bl:#EBF3FF;--gl:#E8F8EF;--rl:#FDECEA;--yl:#FEF9EC;--bd:#E2E6EF;--g0:#F8F9FC;--g1:#F0F2F7;--g5:#8896B0;--g9:#1A253D;--w:#fff}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#F0F4FF;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#1E4DB7 0%,#2E86DE 50%,#1E4DB7 100%)}
+.login-card{background:var(--w);border-radius:24px;padding:36px 32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:popIn .4s ease}
+@keyframes popIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.login-ic{width:44px;height:44px;background:var(--bl);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.login-brand{font-family:Fraunces,serif;font-size:18px;font-weight:700;color:var(--g9)}
+.login-t{font-family:Fraunces,serif;font-size:22px;font-weight:700;margin-bottom:6px}
+.login-s{font-size:13px;color:var(--g5);margin-bottom:24px;line-height:1.5}
+.login-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g5);margin-bottom:6px;display:block}
+.login-inp{width:100%;background:var(--g0);border:1.5px solid var(--bd);border-radius:12px;padding:13px 15px;font-size:15px;font-weight:600;font-family:inherit;outline:none;transition:all .2s;letter-spacing:2px;text-align:center}
+.login-inp:focus{border-color:var(--b);background:var(--w);box-shadow:0 0 0 3px rgba(30,77,183,.1)}
+.login-btn{width:100%;background:var(--b);color:var(--w);border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px;transition:all .2s}
+.login-btn:hover{background:#1840a0;transform:translateY(-1px)}
+.login-help{font-size:12px;color:var(--g5);text-align:center;margin-top:16px}
+.login-demo{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.demo-code{font-size:11px;background:var(--bl);color:var(--b);padding:4px 10px;border-radius:8px;cursor:pointer;font-weight:700;font-family:monospace;border:1.5px solid #C8D9F5;transition:all .15s}
+.demo-code:hover{background:var(--b);color:var(--w)}
+/* APP */
+.app{display:none;min-height:100vh;background:#F0F4FF}
+/* TOPBAR */
+.top{background:linear-gradient(135deg,var(--b),var(--b2));padding:0;position:relative;overflow:hidden}
+.top-bg{position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:rgba(255,255,255,.06);border-radius:50%}
+.top-bg2{position:absolute;bottom:-60px;left:-30px;width:160px;height:160px;background:rgba(255,255,255,.04);border-radius:50%}
+.top-inner{position:relative;z-index:1;padding:20px 20px 24px}
+.top-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.top-logo{display:flex;align-items:center;gap:8px}
+.top-logo-ic{width:30px;height:30px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.top-logo-t{font-family:Fraunces,serif;font-size:13px;font-weight:700;color:var(--w)}
+.top-logout{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:var(--w);border-radius:8px;padding:5px 11px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+.top-user{margin-bottom:4px}
+.top-hello{font-size:13px;color:rgba(255,255,255,.65);margin-bottom:4px}
+.top-name{font-family:Fraunces,serif;font-size:22px;font-weight:700;color:var(--w);line-height:1.2;margin-bottom:12px}
+.top-chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:var(--w);padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600}
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--w);border-top:1.5px solid var(--bd);display:flex;z-index:100;box-shadow:0 -2px 12px rgba(30,77,183,.08)}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 12px;cursor:pointer;transition:all .15s;position:relative}
+.bnav-item.act .bnav-ic{color:var(--b)}
+.bnav-item.act .bnav-lbl{color:var(--b);font-weight:700}
+.bnav-ic{font-size:20px;margin-bottom:3px;transition:transform .15s}
+.bnav-item.act .bnav-ic{transform:scale(1.1)}
+.bnav-lbl{font-size:10px;color:var(--g5);font-weight:500}
+.bnav-badge{position:absolute;top:7px;right:calc(50% - 16px);background:var(--r);color:var(--w);font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center}
+/* CONTENT */
+.content{padding:16px 16px 80px}
+/* VIEWS */
+.view{display:none}.view.act{display:block}
+/* CARDS */
+.card{background:var(--w);border:1.5px solid var(--bd);border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(30,77,183,.07);margin-bottom:14px}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 11px;border-bottom:1px solid var(--g1)}
+.ct{font-family:Fraunces,serif;font-weight:700;font-size:15px}
+.cb{padding:14px 16px}
+.ir{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--g1);font-size:13px;align-items:center;gap:8px}
+.ir:last-child{border-bottom:0}
+.irl{color:var(--g5);font-weight:500;flex:1}
+.irv{font-weight:700}
+.g{color:var(--g)}.b{color:var(--b)}.r{color:var(--r)}.y{color:var(--y)}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.pill::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block}
+.pg{background:var(--gl);color:var(--g)}.pb{background:var(--bl);color:var(--b)}
+.pr{background:var(--rl);color:var(--r)}.py{background:var(--yl);color:var(--y)}
+/* PAGO STATUS */
+.pago-hero{background:linear-gradient(135deg,var(--g),#2ecc71);border-radius:16px;padding:22px;color:var(--w);margin-bottom:14px;position:relative;overflow:hidden}
+.pago-hero.pendiente{background:linear-gradient(135deg,var(--y),#f1c40f)}
+.pago-hero.vencido{background:linear-gradient(135deg,var(--r),#e74c3c)}
+.ph-bg{position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,.1);border-radius:50%}
+.ph-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-bottom:6px}
+.ph-amount{font-family:Fraunces,serif;font-size:38px;font-weight:700;letter-spacing:-2px;line-height:1;margin-bottom:6px}
+.ph-sub{font-size:13px;opacity:.8}
+.ph-btn{background:rgba(255,255,255,.25);border:1.5px solid rgba(255,255,255,.4);color:var(--w);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px;width:100%;transition:all .2s}
+.ph-btn:hover{background:rgba(255,255,255,.35)}
+/* HISTORIAL */
+.pago-row{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--g1)}
+.pago-row:last-child{border-bottom:0}
+.pago-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+/* INCIDENCIAS */
+.inc-form{background:var(--g0);border:1.5px solid var(--bd);border-radius:14px;padding:16px}
+.inc-tipo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.inc-tipo{background:var(--w);border:1.5px solid var(--bd);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s}
+.inc-tipo:hover,.inc-tipo.sel{background:var(--bl);border-color:var(--b)}
+.inc-tipo-ic{font-size:22px;margin-bottom:5px}
+.inc-tipo-n{font-size:11px;font-weight:700}
+.inc-textarea{width:100%;background:var(--w);border:1.5px solid var(--bd);border-radius:10px;padding:12px;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:90px;transition:border-color .2s}
+.inc-textarea:focus{border-color:var(--b);box-shadow:0 0 0 3px rgba(30,77,183,.08)}
+.inc-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g5);margin-bottom:8px;display:block}
+.inc-prio{display:flex;gap:7px;margin-bottom:14px}
+.prio-btn{flex:1;padding:8px;border-radius:9px;border:1.5px solid var(--bd);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--w);transition:all .15s;text-align:center}
+.prio-btn.alta.sel{background:var(--rl);border-color:var(--r);color:var(--r)}
+.prio-btn.media.sel{background:var(--yl);border-color:var(--y);color:var(--y)}
+.prio-btn.baja.sel{background:var(--gl);border-color:var(--g);color:var(--g)}
+.submit-btn{width:100%;background:var(--b);color:var(--w);border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:4px}
+.submit-btn:hover{background:#1840a0}
+.submit-btn:disabled{background:var(--g1);color:var(--g5);cursor:not-allowed}
+/* INC HISTORIAL */
+.inc-card{background:var(--w);border:1.5px solid var(--bd);border-radius:12px;padding:13px 15px;margin-bottom:10px;border-left:4px solid}
+.inc-card.alta{border-left-color:var(--r)}
+.inc-card.media{border-left-color:var(--y)}
+.inc-card.resuelta{border-left-color:var(--g);opacity:.7}
+/* DOCUMENTOS */
+.doc-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--g1);cursor:pointer;transition:all .15s}
+.doc-item:last-child{border-bottom:0}
+.doc-item:hover .doc-ic{background:var(--b);color:var(--w)}
+.doc-ic{width:40px;height:40px;border-radius:11px;background:var(--bl);display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s;flex-shrink:0}
+.doc-t{font-size:13px;font-weight:700;margin-bottom:2px}
+.doc-s{font-size:11px;color:var(--g5)}
+/* ANUNCIOS */
+.anuncio{border-radius:12px;padding:14px 15px;margin-bottom:10px;border-left:4px solid}
+.anuncio.info{background:var(--bl);border-color:var(--b)}
+.anuncio.warn{background:var(--yl);border-color:var(--y)}
+.anuncio.ok{background:var(--gl);border-color:var(--g)}
+.anuncio-t{font-size:13px;font-weight:700;margin-bottom:3px}
+.anuncio-d{font-size:12px;color:var(--g5);line-height:1.5}
+.anuncio-fecha{font-size:10px;color:var(--g5);margin-top:6px}
+/* CONTACTO */
+.contact-btn{display:flex;align-items:center;gap:13px;padding:15px;background:var(--w);border:1.5px solid var(--bd);border-radius:14px;cursor:pointer;transition:all .15s;margin-bottom:10px;text-decoration:none}
+.contact-btn:hover{border-color:var(--b);background:var(--bl);transform:translateY(-1px)}
+.contact-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.contact-t{font-size:14px;font-weight:700;color:var(--g9);margin-bottom:2px}
+.contact-s{font-size:12px;color:var(--g5)}
+/* TOAST */
+.toasts{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:7px;width:calc(100% - 32px);max-width:380px}
+.toast{background:var(--w);border:1.5px solid var(--bd);border-radius:12px;padding:11px 14px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(30,77,183,.15);animation:slideD .3s ease;display:flex;align-items:center;gap:8px;border-left:4px solid var(--b)}
+@keyframes slideD{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.view.act{animation:fadeUp .25s ease}
+/* UTILS */
+.sep{height:1px;background:var(--g1);margin:6px 0}
+.section-title{font-family:Fraunces,serif;font-size:16px;font-weight:700;margin-bottom:12px;margin-top:4px}
+.tag{font-size:10px;background:var(--g1);color:#3D4E6B;padding:2px 7px;border-radius:6px;display:inline-block}
+code{font-size:10px;color:var(--g5);background:var(--g1);padding:2px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="login-wrap" id="login">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-ic">🏠</div>
+      <div class="login-brand">Viviendas Virtuo</div>
+    </div>
+    <div class="login-t">Portal del Inquilino</div>
+    <div class="login-s">Introduce el código de tu habitación para acceder a tu portal personal.</div>
+    <label class="login-label">Código de habitación</label>
+    <input class="login-inp" id="code-inp" type="text" placeholder="SANTS-HAB2" maxlength="12" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar →</button>
+    <div class="login-help">¿No tienes tu código? Escríbenos al<br><strong>611 806 603 · WhatsApp</strong></div>
+    <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--g5);margin-bottom:8px">Códigos demo para probar:</div>
+    <div class="login-demo">
+      <div class="demo-code" onclick="setCode('SANTS-HAB2')">SANTS-HAB2</div>
+      <div class="demo-code" onclick="setCode('SANTS-HAB3')">SANTS-HAB3</div>
+      <div class="demo-code" onclick="setCode('PIRI-HAB1')">PIRI-HAB1</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div class="app" id="app">
+
+  <!-- TOPBAR dinámico -->
+  <div class="top">
+    <div class="top-bg"></div><div class="top-bg2"></div>
+    <div class="top-inner">
+      <div class="top-nav">
+        <div class="top-logo"><div class="top-logo-ic">🏠</div><div class="top-logo-t">Viviendas Virtuo</div></div>
+        <button class="top-logout" onclick="doLogout()">Salir</button>
+      </div>
+      <div class="top-hello" id="top-hello">Hola,</div>
+      <div class="top-name" id="top-name">Cargando...</div>
+      <div class="top-chips">
+        <div class="chip" id="chip-hab">🛏️ —</div>
+        <div class="chip" id="chip-piso">📍 —</div>
+        <div class="chip" id="chip-end">📅 —</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- VIEW: INICIO -->
+    <div class="view act" id="v-inicio">
+      <div id="pago-hero-wrap"></div>
+      <div class="card">
+        <div class="ch"><div class="ct">Mi habitación</div></div>
+        <div class="cb" id="hab-info"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">Próximas fechas</div></div>
+        <div class="cb" id="fechas-info"></div>
+      </div>
+      <div style="background:linear-gradient(135deg,var(--b),var(--b2));border-radius:16px;padding:18px;color:var(--w);margin-bottom:14px;display:flex;align-items:center;gap:14px;cursor:pointer" onclick="goView('incidencias')">
+        <div style="font-size:28px">⚠️</div>
+        <div><div style="font-weight:700;font-size:14px;margin-bottom:3px">¿Algo no funciona?</div><div style="font-size:12px;opacity:.8">Reporta una incidencia · Respuesta &lt;2h</div></div>
+        <div style="margin-left:auto;font-size:20px">→</div>
+      </div>
+    </div>
+
+    <!-- VIEW: PAGOS -->
+    <div class="view" id="v-pagos">
+      <div id="pago-hero-pagos"></div>
+      <div class="card">
+        <div class="ch"><div class="ct">Historial de pagos</div></div>
+        <div class="cb" id="historial-pagos"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">Información bancaria</div></div>
+        <div class="cb">
+          <div class="ir"><div class="irl">IBAN domiciliación</div><div class="irv b">ES91 ···· ···· 4321</div></div>
+          <div class="ir"><div class="irl">Día de cobro</div><div class="irv">1 de cada mes</div></div>
+          <div class="ir"><div class="irl">Concepto recibo</div><div class="irv"><code id="pago-concepto">VV-HAB-MAR26</code></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: INCIDENCIAS -->
+    <div class="view" id="v-incidencias">
+      <div class="section-title">Nueva incidencia</div>
+      <div class="inc-form">
+        <label class="inc-label">Tipo de problema</label>
+        <div class="inc-tipo-grid" id="inc-tipos"></div>
+        <label class="inc-label">Prioridad</label>
+        <div class="inc-prio">
+          <div class="prio-btn alta sel" id="p-alta" onclick="selPrio('alta')">🔴 Alta</div>
+          <div class="prio-btn media" id="p-media" onclick="selPrio('media')">🟡 Media</div>
+          <div class="prio-btn baja" id="p-baja" onclick="selPrio('baja')">🟢 Baja</div>
+        </div>
+        <label class="inc-label">Descripción</label>
+        <textarea class="inc-textarea" id="inc-desc" placeholder="Describe el problema con detalle...&#10;&#10;Ej: El grifo del baño gotea constantemente desde esta mañana."></textarea>
+        <button class="submit-btn" id="inc-submit" onclick="submitInc()" style="margin-top:12px">📤 Enviar incidencia → Respuesta &lt;2h</button>
+      </div>
+      <div class="section-title" style="margin-top:20px">Mis incidencias</div>
+      <div id="inc-historial"></div>
+    </div>
+
+    <!-- VIEW: DOCUMENTOS -->
+    <div class="view" id="v-docs">
+      <div class="section-title">Mis documentos</div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="cb" id="docs-list"></div>
+      </div>
+      <div class="section-title">Anuncios del piso</div>
+      <div id="anuncios-list"></div>
+    </div>
+
+    <!-- VIEW: PISO -->
+    <div class="view" id="v-piso">
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="ct" id="piso-nombre-card">Mi piso</div></div>
+        <div class="cb">
+          <div class="ir"><div class="irl">Dirección</div><div class="irv b" id="pi-dir">—</div></div>
+          <div class="ir"><div class="irl">Barrio</div><div class="irv" id="pi-barrio">—</div></div>
+          <div class="ir"><div class="irl">Habitaciones totales</div><div class="irv" id="pi-habs">—</div></div>
+          <div class="ir"><div class="irl">WiFi</div><div class="irv b" id="pi-wifi">—</div></div>
+          <div class="ir"><div class="irl">Acceso</div><div class="irv" id="pi-acceso">—</div></div>
+        </div>
+      </div>
+      <div class="section-title">Normas de convivencia</div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="cb">
+          <div class="ir"><div class="irl">🔕 Silencio nocturno</div><div class="irv">23:00 – 08:00</div></div>
+          <div class="ir"><div class="irl">🍽️ Cocina limpia</div><div class="irv">Después de usar</div></div>
+          <div class="ir"><div class="irl">🧹 Zonas comunes</div><div class="irv">Rotación semanal</div></div>
+          <div class="ir"><div class="irl">🚿 Ducha</div><div class="irv">Máx 10 min</div></div>
+          <div class="ir"><div class="irl">🚬 Fumar</div><div class="irv r">Prohibido interior</div></div>
+          <div class="ir"><div class="irl">🐾 Mascotas</div><div class="irv r">No permitido</div></div>
+          <div class="ir"><div class="irl">🎉 Visitas</div><div class="irv">Hasta 23:00h</div></div>
+        </div>
+      </div>
+      <div class="section-title">Contactar con el gestor</div>
+      <a class="contact-btn" onclick="toast('Abriendo WhatsApp...','g')">
+        <div class="contact-ic" style="background:#E8F8EF">💬</div>
+        <div><div class="contact-t">WhatsApp · Raúl</div><div class="contact-s">611 806 603 · Respuesta rápida</div></div>
+        <div style="margin-left:auto;font-size:18px;color:var(--g5)">→</div>
+      </a>
+      <a class="contact-btn" onclick="toast('Abriendo email...','b')">
+        <div class="contact-ic" style="background:var(--bl)">📧</div>
+        <div><div class="contact-t">Email</div><div class="contact-s">inquilinos@viviendasvirtuo.com</div></div>
+        <div style="margin-left:auto;font-size:18px;color:var(--g5)">→</div>
+      </a>
+      <a class="contact-btn" onclick="toast('Llamando...','b')">
+        <div class="contact-ic" style="background:var(--yl)">📞</div>
+        <div><div class="contact-t">Llamar · Urgencias</div><div class="contact-s">611 806 603 · 24h emergencias</div></div>
+        <div style="margin-left:auto;font-size:18px;color:var(--g5)">→</div>
+      </a>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <div class="bnav-item act" id="bn-inicio" onclick="goView('inicio')">
+      <div class="bnav-ic">🏠</div><div class="bnav-lbl">Inicio</div>
+    </div>
+    <div class="bnav-item" id="bn-pagos" onclick="goView('pagos')">
+      <div class="bnav-ic">💳</div><div class="bnav-lbl">Pagos</div>
+    </div>
+    <div class="bnav-item" id="bn-incidencias" onclick="goView('incidencias')">
+      <div class="bnav-ic">⚠️</div><div class="bnav-lbl">Incidencias</div>
+      <div class="bnav-badge" id="inc-badge">1</div>
+    </div>
+    <div class="bnav-item" id="bn-docs" onclick="goView('docs')">
+      <div class="bnav-ic">📄</div><div class="bnav-lbl">Docs</div>
+    </div>
+    <div class="bnav-item" id="bn-piso" onclick="goView('piso')">
+      <div class="bnav-ic">👥</div><div class="bnav-lbl">Mi piso</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ── DATOS ──
+var INQUILINOS = {
+  'SANTS-HAB2': {
+    nombre:'Alejandro Martínez',grupo:'G1 · Estudiante',hab:'HAB2',piso:'Sants 10',dir:'Calle Sants 10, 1º3º',barrio:'Sants · Barcelona',renta:850,entrada:'01/04/2026',fin:'31/03/2027',fianza:1700,wifi:'VirtuoSants / VV2026',acceso:'Llave física · Buzón 2B',habs:'5 habitaciones · 3 baños',pagoEstado:'pagado',
+    historial:[
+      {mes:'Marzo 2026',fecha:'01/03/26',importe:850,estado:'pagado'},
+      {mes:'Febrero 2026',fecha:'01/02/26',importe:850,estado:'pagado'},
+      {mes:'Enero 2026',fecha:'01/01/26',importe:850,estado:'pagado'},
+    ],
+    incidencias:[
+      {id:'INC_20260415_001',tipo:'🔧 Fontanería',desc:'Fuga de agua bajo el lavabo',prio:'alta',estado:'En proceso',fecha:'Hoy 09:15'},
+    ],
+    docs:[
+      {ic:'📄',n:'Contrato LAU · HAB2',s:'Firmado 01/04/2026 · 12 meses'},
+      {ic:'📋',n:'Inventario check-in',s:'Fotos + checklist · 01/04/2026'},
+      {ic:'🏠',n:'Normas de convivencia',s:'Versión 2.0 · Marzo 2026'},
+      {ic:'💶',n:'Recibo marzo 2026',s:'850€ · Pagado 01/03/2026'},
+    ]
+  },
+  'SANTS-HAB3': {
+    nombre:'Carlos Ruiz',grupo:'G3 · Sanitario',hab:'HAB3',piso:'Sants 10',dir:'Calle Sants 10, 1º3º',barrio:'Sants · Barcelona',renta:750,entrada:'15/02/2026',fin:'14/02/2027',fianza:1500,wifi:'VirtuoSants / VV2026',acceso:'Llave física · Buzón 3B',habs:'5 habitaciones · 3 baños',pagoEstado:'pendiente',
+    historial:[
+      {mes:'Marzo 2026',fecha:'—',importe:750,estado:'pendiente'},
+      {mes:'Febrero 2026',fecha:'01/02/26',importe:750,estado:'pagado'},
+    ],
+    incidencias:[],
+    docs:[
+      {ic:'📄',n:'Contrato LAU · HAB3',s:'Firmado 15/02/2026 · 12 meses'},
+      {ic:'📋',n:'Inventario check-in',s:'Fotos + checklist · 15/02/2026'},
+    ]
+  },
+  'PIRI-HAB1': {
+    nombre:'Sara López',grupo:'G5 · Directiva',hab:'HAB1',piso:'Pirineus 5',dir:'Bulevar Pirineus 5, A 2º3º',barrio:'La Morera · Badalona',renta:680,entrada:'03/12/2025',fin:'02/12/2026',fianza:1360,wifi:'VirtuoPiri / VV2026',acceso:'Clave: 4821 · Entrada principal',habs:'5 habitaciones · 3 baños',pagoEstado:'pagado',
+    historial:[
+      {mes:'Marzo 2026',fecha:'01/03/26',importe:680,estado:'pagado'},
+      {mes:'Febrero 2026',fecha:'01/02/26',importe:680,estado:'pagado'},
+      {mes:'Enero 2026',fecha:'01/01/26',importe:680,estado:'pagado'},
+      {mes:'Diciembre 2025',fecha:'01/12/25',importe:680,estado:'pagado'},
+    ],
+    incidencias:[],
+    docs:[
+      {ic:'📄',n:'Contrato LAU · HAB1',s:'Firmado 03/12/2025 · 12 meses'},
+      {ic:'📋',n:'Inventario check-in',s:'Fotos + checklist · 03/12/2025'},
+      {ic:'💶',n:'Recibo marzo 2026',s:'680€ · Pagado 01/03/2026'},
+    ]
+  }
+};
+
+var ANUNCIOS = [
+  {tipo:'warn',t:'⚠️ Visita técnica HAB1 · Lunes 11/03',d:'Pinturas Andres vendrá a revisar HAB1 entre 10-12h. Por favor tened libre el acceso.',f:'08/03/2026'},
+  {tipo:'info',t:'📋 Nueva red WiFi',d:'Nueva red VirtuoSants2. Contraseña en el tablón de la cocina. La red antigua se desconecta el 15/03.',f:'01/03/2026'},
+  {tipo:'ok',t:'✅ Incidencia cerrada · Cerradura HAB4',d:'La cerradura de HAB4 ha sido reparada. Todo OK.',f:'28/02/2026'},
+];
+
+var incTipos = [
+  {ic:'🔧',n:'Fontanería'},{ic:'💡',n:'Electricidad'},{ic:'🔒',n:'Cerradura'},
+  {ic:'🌡️',n:'Calefacción'},{ic:'🪟',n:'Ventanas'},{ic:'🧹',n:'Limpieza'},
+];
+
+var CU = null; // Current user
+var CV = 'inicio'; // Current view
+var incTipoSel = 0;
+var incPrioSel = 'alta';
+
+// ── LOGIN ──
+function setCode(c){document.getElementById('code-inp').value=c;}
+function doLogin(){
+  var code = document.getElementById('code-inp').value.trim().toUpperCase();
+  if(!code){toast('Introduce un código','y');return;}
+  if(!INQUILINOS[code]){toast('Código no encontrado. Prueba SANTS-HAB2','r');return;}
+  CU = INQUILINOS[code];
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  initApp();
+  toast('¡Bienvenido/a '+CU.nombre.split(' ')[0]+'! 🏠','g');
+}
+function doLogout(){
+  CU=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').style.display='flex';
+  document.getElementById('code-inp').value='';
+}
+
+// ── INIT ──
+function initApp(){
+  // Top bar
+  document.getElementById('top-hello').textContent = 'Hola,';
+  document.getElementById('top-name').textContent = CU.nombre.split(' ')[0] + ' 👋';
+  document.getElementById('chip-hab').textContent = '🛏️ ' + CU.hab;
+  document.getElementById('chip-piso').textContent = '📍 ' + CU.piso;
+  document.getElementById('chip-end').textContent = '📅 Hasta ' + CU.fin.substring(6);
+  // Pago concepto
+  var pc = document.getElementById('pago-concepto');
+  if(pc) pc.textContent = 'VV-'+CU.hab+'-MAR26';
+  // Render views
+  renderInicio();
+  renderPagos();
+  renderIncForm();
+  renderDocs();
+  renderPiso();
+  // Badge
+  var b = document.getElementById('inc-badge');
+  var open = CU.incidencias.filter(function(i){return i.estado!=='Resuelta';}).length;
+  if(b){b.textContent=open;b.style.display=open>0?'block':'none';}
+}
+
+function renderInicio(){
+  // Pago hero
+  var ph = document.getElementById('pago-hero-wrap');
+  if(ph) ph.innerHTML = buildPagoHero();
+  // Hab info
+  var hi = document.getElementById('hab-info');
+  if(hi) hi.innerHTML = '<div class="ir"><div class="irl">Habitación</div><div class="irv b">'+CU.hab+'</div></div>'
+    +'<div class="ir"><div class="irl">Renta mensual</div><div class="irv g">'+CU.renta.toLocaleString('es-ES')+'€</div></div>'
+    +'<div class="ir"><div class="irl">Grupo</div><div class="irv">'+CU.grupo+'</div></div>'
+    +'<div class="ir"><div class="irl">Fianza depositada</div><div class="irv">'+CU.fianza.toLocaleString('es-ES')+'€</div></div>';
+  // Fechas
+  var fi = document.getElementById('fechas-info');
+  if(fi) fi.innerHTML = '<div class="ir"><div class="irl">Entrada</div><div class="irv">'+CU.entrada+'</div></div>'
+    +'<div class="ir"><div class="irl">Fin de contrato</div><div class="irv y">'+CU.fin+'</div></div>'
+    +'<div class="ir"><div class="irl">Próximo pago</div><div class="irv b">01/04/2026 · '+CU.renta+'€</div></div>';
+}
+
+function buildPagoHero(){
+  var estado = CU.pagoEstado;
+  var cls = estado==='pagado'?'':'estado==="pendiente"?'pendiente':'vencido';
+  cls = estado==='pagado'?'':estado==='pendiente'?'pendiente':'vencido';
+  var lbl = estado==='pagado'?'Renta al día ✓':estado==='pendiente'?'Pago pendiente':'⚠️ Pago vencido';
+  var sub = estado==='pagado'?'Marzo 2026 · Cobrado el 01/03':'Vence el 01/04/2026 · '+CU.renta+'€';
+  var btn = estado==='pagado'?'Ver historial de pagos':'Pagar ahora →';
+  return '<div class="pago-hero '+cls+'" onclick="goView('pagos')"><div class="ph-bg"></div><div class="ph-lbl">'+lbl+'</div><div class="ph-amount">'+CU.renta.toLocaleString('es-ES')+'€</div><div class="ph-sub">'+sub+'</div><button class="ph-btn">'+btn+'</button></div>';
+}
+
+function renderPagos(){
+  var ph2 = document.getElementById('pago-hero-pagos');
+  if(ph2) ph2.innerHTML = buildPagoHero();
+  var hp = document.getElementById('historial-pagos');
+  if(!hp) return;
+  var h = '';
+  for(var i=0;i<CU.historial.length;i++){
+    var p=CU.historial[i];
+    var ok=p.estado==='pagado';
+    h+='<div class="pago-row"><div class="pago-ic" style="background:'+(ok?'var(--gl)':'var(--yl)')+'">'+(ok?'✅':'⏳')+'</div>'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:700;margin-bottom:2px">'+p.mes+'</div>'
+      +'<div style="font-size:11px;color:var(--g5)">'+(ok?'Cobrado: '+p.fecha:'Pendiente')+'</div></div>'
+      +'<div style="text-align:right"><div style="font-size:14px;font-weight:700;color:'+(ok?'var(--g)':'var(--y)')+'">'+p.importe.toLocaleString('es-ES')+'€</div>'
+      +'<span class="pill '+(ok?'pg':'py')+'">'+(ok?'Pagado':'Pendiente')+'</span></div></div>';
+  }
+  hp.innerHTML=h;
+}
+
+function renderIncForm(){
+  // Tipos
+  var it = document.getElementById('inc-tipos');
+  if(it){
+    var h='';
+    for(var i=0;i<incTipos.length;i++){
+      h+='<div class="inc-tipo'+(i===incTipoSel?' sel':'')+'" onclick="selIncTipo('+i+')"><div class="inc-tipo-ic">'+incTipos[i].ic+'</div><div class="inc-tipo-n">'+incTipos[i].n+'</div></div>';
+    }
+    it.innerHTML=h;
+  }
+  // Historial
+  var ih = document.getElementById('inc-historial');
+  if(ih){
+    if(!CU.incidencias.length){ih.innerHTML='<div style="text-align:center;color:var(--g5);padding:20px;font-size:13px">Sin incidencias registradas 🎉</div>';return;}
+    var h2='';
+    for(var i=0;i<CU.incidencias.length;i++){
+      var inc=CU.incidencias[i];
+      h2+='<div class="inc-card '+inc.prio+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px"><code>'+inc.id+'</code><span class="pill '+(inc.estado==='Resuelta'?'pg':inc.prio==='alta'?'pr':'py')+'">'+inc.estado+'</span></div><div style="font-size:13px;font-weight:700;margin-bottom:4px">'+inc.tipo+' · '+inc.desc+'</div><div style="font-size:11px;color:var(--g5)">'+inc.fecha+'</div></div>';
+    }
+    ih.innerHTML=h2;
+  }
+}
+
+function selIncTipo(i){incTipoSel=i;renderIncForm();}
+function selPrio(p){
+  incPrioSel=p;
+  ['alta','media','baja'].forEach(function(x){
+    var el=document.getElementById('p-'+x);
+    if(el)el.classList.toggle('sel',x===p);
+  });
+}
+function submitInc(){
+  var desc=document.getElementById('inc-desc').value.trim();
+  if(!desc){toast('Describe el problema','y');return;}
+  var btn=document.getElementById('inc-submit');
+  btn.disabled=true;btn.textContent='Enviando...';
+  setTimeout(function(){
+    var newInc={id:'INC_'+Date.now(),tipo:incTipos[incTipoSel].ic+' '+incTipos[incTipoSel].n,desc:desc,prio:incPrioSel,estado:'Recibida',fecha:'Ahora'};
+    CU.incidencias.unshift(newInc);
+    document.getElementById('inc-desc').value='';
+    btn.disabled=false;btn.textContent='📤 Enviar incidencia → Respuesta <2h';
+    var b=document.getElementById('inc-badge');
+    var open=CU.incidencias.filter(function(i){return i.estado!=='Resuelta';}).length;
+    if(b){b.textContent=open;b.style.display=open>0?'block':'none';}
+    renderIncForm();
+    toast('✅ Incidencia enviada. Respondemos en &lt;2h','g');
+  },1200);
+}
+
+function renderDocs(){
+  var dl=document.getElementById('docs-list');
+  if(dl){
+    var h='';
+    for(var i=0;i<CU.docs.length;i++){
+      var d=CU.docs[i];
+      h+='<div class="doc-item" onclick="toast('Descargando: '+d.n+'...','b')"><div class="doc-ic">'+d.ic+'</div><div style="flex:1"><div class="doc-t">'+d.n+'</div><div class="doc-s">'+d.s+'</div></div><div style="color:var(--g5);font-size:14px">↓</div></div>';
+    }
+    dl.innerHTML=h;
+  }
+  var al=document.getElementById('anuncios-list');
+  if(al){
+    var h2='';
+    for(var i=0;i<ANUNCIOS.length;i++){
+      var a=ANUNCIOS[i];
+      h2+='<div class="anuncio '+a.tipo+'"><div class="anuncio-t">'+a.t+'</div><div class="anuncio-d">'+a.d+'</div><div class="anuncio-fecha">'+a.f+'</div></div>';
+    }
+    al.innerHTML=h2;
+  }
+}
+
+function renderPiso(){
+  var fields={
+    'pi-dir':CU.dir,'pi-barrio':CU.barrio,'pi-habs':CU.habs,
+    'pi-wifi':CU.wifi,'pi-acceso':CU.acceso
+  };
+  for(var k in fields){var e=document.getElementById(k);if(e)e.textContent=fields[k];}
+  var pn=document.getElementById('piso-nombre-card');
+  if(pn)pn.textContent='Piso '+CU.piso;
+}
+
+// ── NAVEGACIÓN ──
+function goView(v){
+  var views=['inicio','pagos','incidencias','docs','piso'];
+  for(var i=0;i<views.length;i++){
+    var el=document.getElementById('v-'+views[i]);
+    var bn=document.getElementById('bn-'+views[i]);
+    if(el)el.className='view'+(views[i]===v?' act':'');
+    if(bn)bn.className='bnav-item'+(views[i]===v?' act':'');
+  }
+  CV=v;
+  window.scrollTo(0,0);
+}
+
+// ── TOAST ──
+function toast(msg,tc){
+  var tw=document.getElementById('toasts');
+  var t=document.createElement('div');
+  t.className='toast';
+  var c={b:'var(--b)',g:'var(--g)',r:'var(--r)',y:'var(--y)'};
+  t.style.borderLeftColor=c[tc]||c.b;
+  t.textContent=msg;
+  tw.appendChild(t);
+  setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},3500);
+}
+</script>
+</body>
+</html>

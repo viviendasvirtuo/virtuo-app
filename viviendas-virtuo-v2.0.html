@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Viviendas Virtuo</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Fraunces:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--b:#1E4DB7;--b2:#2E86DE;--g:#27AE60;--r:#E74C3C;--y:#F39C12;--p:#8E44AD;--bl:#EBF3FF;--gl:#E8F8EF;--rl:#FDECEA;--yl:#FEF9EC;--pl:#F5EEF8;--bd:#E2E6EF;--g0:#F8F9FC;--g1:#F0F2F7;--g5:#8896B0;--g9:#1A253D;--w:#fff;--rad:14px}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#F0F4FF;display:flex;min-height:100vh;font-size:14px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+aside{width:242px;background:var(--b);display:flex;flex-direction:column;position:fixed;height:100vh;left:0;top:0;z-index:100;overflow-y:auto;transition:transform .3s;overscroll-behavior:contain}
+.logo-wrap{padding:18px 16px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.logo-row{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.logo-ic{width:34px;height:34px;background:var(--w);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.logo-t{font-family:Fraunces,serif;font-size:15px;font-weight:700;color:var(--w);line-height:1.2}
+.v-b{font-size:9px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.75);padding:2px 8px;border-radius:20px;display:inline-block}
+nav{padding:10px 8px;flex:1}
+.ng{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.3);padding:0 9px;margin:10px 0 4px;font-weight:700}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:all .15s;font-size:13px;color:rgba(255,255,255,.62);font-weight:500;margin-bottom:1px;position:relative}
+.ni.act{background:var(--w);color:var(--b);font-weight:700}
+.ni:not(.act):hover{background:rgba(255,255,255,.1);color:var(--w)}
+.ni-ic{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.ni-b{font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:rgba(255,255,255,.18);color:var(--w);margin-left:auto;flex-shrink:0}
+.ni.act .ni-b{background:var(--b);color:var(--w)}
+.ni-new{font-size:9px;font-weight:700;background:#F39C12;color:var(--w);padding:1px 5px;border-radius:4px;margin-left:auto}
+.ub-wrap{padding:10px;border-top:1px solid rgba(255,255,255,.1)}
+.ub{display:flex;align-items:center;gap:9px;padding:10px 11px;background:rgba(255,255,255,.08);border-radius:11px}
+.ub-av{width:32px;height:32px;background:var(--w);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:var(--b);flex-shrink:0}
+.ub-n{font-size:12px;font-weight:700;color:var(--w);line-height:1.2}
+.ub-s{font-size:10px;color:rgba(255,255,255,.4)}
+main{margin-left:242px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;background:var(--w);border-bottom:1.5px solid var(--bd);position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(30,77,183,.07);gap:10px}
+.tb-l{display:flex;align-items:center;gap:10px;min-width:0}
+.tb-menu{width:34px;height:34px;background:var(--b);border:none;color:var(--w);border-radius:9px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tb-title{font-family:Fraunces,serif;font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-r{display:flex;gap:7px;align-items:center;flex-shrink:0}
+.btn{padding:7px 12px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1.5px solid var(--bd);background:var(--g0);color:var(--g9);white-space:nowrap}
+.btn:hover{background:var(--g1)}
+.btn-p{background:var(--b);color:var(--w);border-color:var(--b)}
+.btn-p:hover{background:#1840a0}
+.btn-g{background:var(--g);color:var(--w);border-color:var(--g)}
+.content{padding:20px 22px;flex:1;animation:fu .25s ease}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* LAYOUT */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px}
+.kpis5{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;margin-bottom:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g13{display:grid;grid-template-columns:1fr 3fr;gap:14px;margin-bottom:14px}
+.g31{display:grid;grid-template-columns:3fr 1fr;gap:14px;margin-bottom:14px}
+/* KPI */
+.kpi{background:var(--w);border:1.5px solid var(--bd);border-radius:var(--rad);padding:16px;box-shadow:0 1px 3px rgba(30,77,183,.06);position:relative;overflow:hidden}
+.kpi-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--rad) var(--rad) 0 0}
+.kpi-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:10px}
+.kpi-v{font-family:Fraunces,serif;font-size:26px;font-weight:700;letter-spacing:-1px;line-height:1;margin-bottom:3px}
+.kpi-l{font-size:11px;color:var(--g5);font-weight:500;margin-bottom:4px}
+.kpi-t{font-size:11px;font-weight:600}
+/* CARD */
+.card{background:var(--w);border:1.5px solid var(--bd);border-radius:var(--rad);overflow:hidden;box-shadow:0 1px 3px rgba(30,77,183,.06);margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:13px 16px 10px;border-bottom:1px solid var(--g1)}
+.ct{font-family:Fraunces,serif;font-weight:700;font-size:14px}
+.cb{padding:13px 16px}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--g5);padding:8px 12px;border-bottom:1.5px solid var(--g1);background:var(--g0);font-weight:700;white-space:nowrap}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--g1)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr:hover td{background:var(--g0)}
+/* IR row */
+.ir{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--g1);font-size:13px;align-items:center;gap:8px}
+.ir:last-child{border-bottom:0}
+.irl{color:var(--g5);font-weight:500;flex:1}
+.irv{font-weight:700;flex-shrink:0}
+.g{color:var(--g)}.b{color:var(--b)}.r{color:var(--r)}.y{color:var(--y)}.p{color:var(--p)}
+/* PILLS */
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.pill::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block}
+.pg{background:var(--gl);color:var(--g)}.pb{background:var(--bl);color:var(--b)}
+.pr{background:var(--rl);color:var(--r)}.py{background:var(--yl);color:var(--y)}
+.pp{background:var(--pl);color:var(--p)}.pgr{background:var(--g1);color:var(--g5)}
+/* SECTIONS */
+.sec{display:none}.sec.act{display:block}
+/* ROW ITEM */
+.ri{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--g1)}
+.ri:last-child{border-bottom:0}
+.ri-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ri-t{font-size:13px;font-weight:700;margin-bottom:2px}
+.ri-s{font-size:11px;color:var(--g5)}
+code{font-size:10px;color:var(--g5);background:var(--g1);padding:2px 6px;border-radius:5px;font-family:monospace}
+/* PROGRESS BAR */
+.prog-w{flex:1;height:6px;background:var(--g1);border-radius:3px;overflow:hidden}
+.prog-f{height:100%;border-radius:3px}
+/* PISO */
+.piso{background:var(--w);border:1.5px solid var(--bd);border-radius:var(--rad);margin-bottom:14px;overflow:hidden;box-shadow:0 1px 3px rgba(30,77,183,.06)}
+.piso-bar{height:4px;background:linear-gradient(90deg,var(--b),var(--b2))}
+.piso-body{padding:15px 16px}
+.piso-name{font-family:Fraunces,serif;font-size:15px;font-weight:700;margin-bottom:2px}
+.piso-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:12px 0}
+.ps{background:var(--g0);border:1px solid var(--g1);border-radius:9px;padding:9px;text-align:center}
+.ps-v{font-family:Fraunces,serif;font-size:19px;font-weight:700;color:var(--b)}
+.ps-l{font-size:10px;color:var(--g5);margin-top:2px}
+.habs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.hab{flex:1;min-width:52px;border-radius:9px;padding:7px 5px;text-align:center;border:1.5px solid}
+.hab.ok{background:#F0FAF4;border-color:#A8E6C1}
+.hab.ko{background:#FFF5F4;border-color:#F5A89E}
+.hab.libre{background:var(--bl);border-color:#C8D9F5}
+.hab-n{font-family:Fraunces,serif;font-weight:700;font-size:12px}
+.hab-v{font-size:10px;font-weight:600;margin-top:2px}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{font-size:10px;background:var(--g1);color:#3D4E6B;padding:2px 7px;border-radius:6px}
+/* OCC BAR */
+.occ-bar-w{height:8px;background:var(--g1);border-radius:4px;overflow:hidden;margin-top:8px}
+.occ-bar-f{height:100%;border-radius:4px;transition:width .5s ease}
+/* PIPELINE */
+.pipe-stages{display:flex;gap:0;overflow-x:auto;padding-bottom:4px}
+.pipe-stage{flex-shrink:0;text-align:center}
+.pipe-dot{width:28px;height:28px;border-radius:50%;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+.pipe-dot.act2{background:var(--b);color:var(--w);box-shadow:0 0 0 4px rgba(30,77,183,.15)}
+.pipe-dot.done{background:var(--g);color:var(--w)}
+.pipe-dot.todo{background:var(--g1);color:var(--g5)}
+.pipe-line{flex:1;height:2px;background:var(--g1);min-width:14px;margin-top:14px}
+.pipe-line.done{background:var(--g)}
+.pipe-lbl{font-size:9px;color:var(--g5);font-weight:600;text-transform:uppercase;letter-spacing:.2px;line-height:1.3;max-width:68px;margin:0 auto}
+/* FINANZAS */
+.fin-month{background:var(--g0);border:1px solid var(--bd);border-radius:9px;padding:9px 12px;display:flex;align-items:center;gap:10px;margin-bottom:7px;cursor:pointer;transition:all .15s}
+.fin-month:hover{background:var(--bl);border-color:var(--b)}
+.fin-month.sel{background:var(--bl);border-color:var(--b)}
+.fin-m{font-size:12px;font-weight:700;color:var(--g9);min-width:30px}
+.fin-bar-w{flex:1;height:12px;background:var(--g1);border-radius:6px;overflow:hidden}
+.fin-bar-i{height:100%;background:linear-gradient(90deg,var(--g),#2ecc71);border-radius:6px}
+.fin-bar-e{height:100%;background:linear-gradient(90deg,var(--r),#e74c3c);border-radius:6px;margin-top:-12px}
+.fin-val{font-size:11px;font-weight:700;min-width:56px;text-align:right}
+/* INCIDENCIAS */
+.inc-card{background:var(--w);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+.inc-card:hover{border-color:var(--b);box-shadow:0 2px 8px rgba(30,77,183,.1)}
+.inc-card.alta{border-left:4px solid var(--r)}
+.inc-card.media{border-left:4px solid var(--y)}
+.inc-card.baja{border-left:4px solid var(--g)}
+.inc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
+.inc-t{font-size:13px;font-weight:700;flex:1}
+.inc-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.inc-m{font-size:11px;color:var(--g5)}
+/* PLANTILLAS */
+.msg-card{background:var(--g0);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .15s;position:relative}
+.msg-card:hover{border-color:var(--b);background:var(--bl)}
+.msg-code{font-family:monospace;font-size:10px;font-weight:700;color:var(--b);background:var(--bl);padding:2px 7px;border-radius:5px;margin-bottom:6px;display:inline-block}
+.msg-subj{font-size:13px;font-weight:700;margin-bottom:4px}
+.msg-prev{font-size:12px;color:var(--g5);line-height:1.5}
+.copy-btn{position:absolute;top:12px;right:12px;background:var(--b);color:var(--w);border:none;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;opacity:0;transition:opacity .2s}
+.msg-card:hover .copy-btn{opacity:1}
+/* CHECKIN */
+.chk-step{background:var(--w);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.chk-step.done{border-color:var(--g);background:var(--gl)}
+.chk-step.done .chk-title{color:var(--g)}
+.chk-title{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.chk-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--g1);cursor:pointer}
+.chk-item:last-child{border-bottom:0}
+.chk-box{width:18px;height:18px;border:2px solid var(--bd);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:10px}
+.chk-box.chk{border-color:var(--g);background:var(--g);color:var(--w)}
+.chk-lbl{font-size:12px;color:var(--g9);flex:1}
+/* COMUNIDAD */
+.com-task{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--g1)}
+.com-task:last-child{border-bottom:0}
+.com-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--w);flex-shrink:0}
+.com-task-t{font-size:13px;font-weight:600;flex:1}
+.com-task-s{font-size:11px;color:var(--g5)}
+.anuncio{border-radius:12px;padding:13px 15px;margin-bottom:10px;border-left:4px solid}
+.anuncio.info{background:var(--bl);border-color:var(--b)}
+.anuncio.warn{background:var(--yl);border-color:var(--y)}
+.anuncio.ok{background:var(--gl);border-color:var(--g)}
+.anuncio-t{font-size:13px;font-weight:700;margin-bottom:3px}
+.anuncio-d{font-size:12px;color:var(--g5);line-height:1.5}
+/* MATCHING */
+.match-card{background:var(--w);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+.match-card:hover{border-color:var(--b);box-shadow:0 2px 8px rgba(30,77,183,.1)}
+.match-score{font-family:Fraunces,serif;font-size:22px;font-weight:700}
+.match-bar{height:6px;background:var(--g1);border-radius:3px;margin:8px 0;overflow:hidden}
+.match-fill{height:100%;border-radius:3px}
+/* CALCULADORA */
+.calc-grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+.calc-col{display:flex;flex-direction:column;gap:14px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g5)}
+.finp{background:var(--g0);border:1.5px solid var(--bd);border-radius:9px;padding:9px 12px;color:var(--g9);font-size:14px;font-weight:600;width:100%;outline:none;font-family:inherit;transition:border-color .2s}
+.finp:focus{border-color:var(--b);background:var(--w);box-shadow:0 0 0 3px rgba(30,77,183,.08)}
+.res-boxes{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px}
+.res-box{border-radius:12px;padding:13px;text-align:center}
+.rb-l{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--g5);margin-bottom:4px}
+.rb-v{font-family:Fraunces,serif;font-size:25px;font-weight:700;letter-spacing:-1px;line-height:1}
+.rb-s{font-size:11px;color:var(--g5);margin-top:3px}
+.verdict{border-radius:10px;padding:10px 13px;display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.5;margin-top:10px}
+.verdict.ok{background:var(--gl);border:1.5px solid #A8E6C1}
+.verdict.warn{background:var(--yl);border:1.5px solid #f9d78a}
+.verdict.bad{background:var(--rl);border:1.5px solid #F5A89E}
+.proj-row{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.proj-lbl{font-size:10px;color:var(--g5);width:26px;font-family:monospace}
+.proj-bw{flex:1;height:16px;background:var(--g1);border-radius:4px;overflow:hidden}
+.proj-bf{height:100%;border-radius:4px}
+.proj-v{font-size:10px;font-family:monospace;width:60px;text-align:right;flex-shrink:0}
+/* SIMULADOR */
+.sim-grid{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:start}
+.sim-prog{height:4px;background:var(--g1);border-radius:2px;margin-bottom:18px;overflow:hidden}
+.sim-prog-f{height:100%;background:linear-gradient(90deg,var(--b),var(--b2));border-radius:2px;transition:width .4s}
+.sli{display:flex;gap:9px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:all .15s;border:1.5px solid transparent;margin-bottom:2px;position:relative}
+.sli.done .sn{background:var(--g);color:var(--w)}
+.sli.cur{background:var(--bl);border-color:#C8D9F5}
+.sli.cur .sn{background:var(--b);color:var(--w)}
+.sli.todo .sn{background:var(--g1);color:var(--g5)}
+.sli:not(.cur):hover{background:var(--g0)}
+.sn{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;z-index:1;transition:all .2s}
+.sl-n{font-size:12px;font-weight:600;color:var(--g9)}
+.sli.cur .sl-n{color:var(--b)}
+.sl-m{font-size:10px;color:var(--g5);font-family:monospace}
+.sl-line{position:absolute;left:19px;top:40px;bottom:-12px;width:2px;background:var(--g1)}
+.tl{display:flex;align-items:center;overflow-x:auto;padding-bottom:4px;margin-bottom:14px}
+.tl-d{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;cursor:pointer;transition:all .3s}
+.tl-d.done{background:var(--g);color:var(--w)}
+.tl-d.cur{background:var(--b);color:var(--w);box-shadow:0 0 0 4px rgba(30,77,183,.15)}
+.tl-d.todo{background:var(--g1);color:var(--g5)}
+.tl-l{flex:1;height:2px;background:var(--g1);min-width:10px;transition:background .3s}
+.tl-l.done{background:var(--g)}
+.tl-lbl{font-size:9px;color:var(--g5);font-weight:600;text-transform:uppercase;text-align:center;margin-top:3px}
+.tl-col{min-width:44px;text-align:center}
+.sc{background:var(--w);border:1.5px solid var(--bd);border-radius:var(--rad);padding:18px;animation:fu .2s}
+.sc-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px}
+.sc-t{font-family:Fraunces,serif;font-size:17px;font-weight:700;margin-bottom:3px}
+.sc-s{font-size:12px;color:var(--g5);margin-bottom:14px}
+.trig{background:var(--bl);border:1px solid #C8D9F5;border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;line-height:1.5;color:#3D4E6B}
+.msg{border-radius:10px;padding:11px 13px;margin-bottom:8px}
+.msg.em{background:var(--bl);border:1.5px solid #C8D9F5}
+.msg.wa{background:var(--gl);border:1.5px solid #A8E6C1}
+.msg.sy{background:var(--g0);border:1.5px solid var(--bd)}
+.msg-tp{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.msg-tp.em{color:var(--b)}.msg-tp.wa{color:var(--g)}.msg-tp.sy{color:var(--g5)}
+.msg-tx{font-size:13px;line-height:1.6;color:#3D4E6B}
+.grupos{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:8px 0}
+.gc{background:var(--g0);border:1.5px solid var(--bd);border-radius:9px;padding:7px 4px;text-align:center;cursor:pointer;transition:all .15s}
+.gc:hover,.gc.sel{background:var(--bl);border-color:var(--b)}
+.gc-ic{font-size:17px;margin-bottom:2px}
+.gc-n{font-size:10px;font-weight:700}
+.gc-s{font-size:9px;color:var(--g5)}
+.acard{background:var(--g0);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;margin-bottom:8px}
+.acard-t{font-size:13px;font-weight:700;margin-bottom:5px}
+.acard-d{font-size:12px;color:var(--g5);line-height:1.5}
+ul.cl{list-style:none;display:flex;flex-direction:column;gap:4px}
+ul.cl li{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#3D4E6B}
+ul.cl li::before{content:'✓';color:var(--g);font-weight:700;flex-shrink:0}
+ul.cl li.arr::before{content:'→';color:var(--b)}
+.sim-btns{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap}
+.btn-nxt{background:var(--b);color:var(--w);border:none;border-radius:9px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-nxt:hover{background:#1840a0;transform:translateY(-1px)}
+.btn-bk{background:var(--g0);color:#3D4E6B;border:1.5px solid var(--bd);border-radius:9px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-ok{background:var(--gl);color:var(--g);border:1.5px solid #A8E6C1;border-radius:9px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+/* TOAST */
+.toasts{position:fixed;bottom:18px;right:18px;z-index:500;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--w);border:1.5px solid var(--bd);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(30,77,183,.15);min-width:230px;animation:slideIn .3s;display:flex;align-items:center;gap:8px;border-left:4px solid var(--b)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+/* RESPONSIVE */
+@media(max-width:900px){
+  aside{transform:translateX(-100%)}
+  aside.open{transform:translateX(0)}
+  main{margin-left:0}
+  .kpis,.kpis5{grid-template-columns:1fr 1fr}
+  .g2,.g3,.g13,.g31,.calc-grid,.sim-grid,.frow{grid-template-columns:1fr}
+  .habs .hab{min-width:46px}
+  .piso-stats{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){
+  .kpis,.kpis5{grid-template-columns:1fr 1fr}
+  .content{padding:14px 14px}
+  .topbar{padding:10px 14px}
+}
+</style>
+</head>
+<body>
+
+<aside id="aside">
+  <div class="logo-wrap">
+    <div class="logo-row">
+      <div class="logo-ic">🏠</div>
+      <div class="logo-t">Viviendas<br>Virtuo</div>
+    </div>
+    <span class="v-b">v2.0 · R&R Property Mgmt</span>
+  </div>
+  <nav>
+    <div class="ng">Principal</div>
+    <div class="ni act" onclick="go('dashboard')"><span class="ni-ic">📊</span>Dashboard</div>
+    <div class="ni" onclick="go('pisos')"><span class="ni-ic">🏘️</span>Mis Pisos<span class="ni-b">3</span></div>
+    <div class="ni" onclick="go('ocupacion')"><span class="ni-ic">📈</span>Ocupación & KPIs<span class="ni-new">NEW</span></div>
+    <div class="ng">Inquilinos</div>
+    <div class="ni" onclick="go('pipeline')"><span class="ni-ic">🎯</span>Pipeline CRM<span class="ni-new">NEW</span></div>
+    <div class="ni" onclick="go('matching')"><span class="ni-ic">🤝</span>Matching G1-G10<span class="ni-new">NEW</span></div>
+    <div class="ni" onclick="go('checkins')"><span class="ni-ic">🔑</span>Check-ins / Outs</div>
+    <div class="ni" onclick="go('incidencias')"><span class="ni-ic">⚠️</span>Incidencias<span class="ni-b">2</span></div>
+    <div class="ng">Operativa</div>
+    <div class="ni" onclick="go('finanzas')"><span class="ni-ic">💰</span>Finanzas · P&L</div>
+    <div class="ni" onclick="go('proveedores')"><span class="ni-ic">🔧</span>Proveedores</div>
+    <div class="ni" onclick="go('comunidad')"><span class="ni-ic">👥</span>Comunidad<span class="ni-new">NEW</span></div>
+    <div class="ng">Sistema</div>
+    <div class="ni" onclick="go('make')"><span class="ni-ic">⚡</span>Make · A–E</div>
+    <div class="ni" onclick="go('calendly')"><span class="ni-ic">📅</span>Calendly</div>
+    <div class="ni" onclick="go('registro')"><span class="ni-ic">📝</span>SOP16<span class="ni-b">17</span></div>
+    <div class="ni" onclick="go('sops')"><span class="ni-ic">📖</span>SOPs 1–16</div>
+    <div class="ni" onclick="go('mensajes')"><span class="ni-ic">💬</span>Plantillas<span class="ni-b">36</span></div>
+    <div class="ng">Herramientas</div>
+    <div class="ni" onclick="go('calculadora')"><span class="ni-ic">🧮</span>Calculadora ROI</div>
+    <div class="ni" onclick="go('simulador')"><span class="ni-ic">🔄</span>Simulador</div>
+  </nav>
+  <div class="ub-wrap">
+    <div class="ub">
+      <div class="ub-av">RH</div>
+      <div><div class="ub-n">Raúl del Hoyo</div><div class="ub-s">contacto@viviendasvirtuo.com</div></div>
+    </div>
+  </div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div class="tb-l">
+      <button class="tb-menu" onclick="toggleMenu()">☰</button>
+      <span class="tb-title" id="tbt">Dashboard</span>
+    </div>
+    <div class="tb-r">
+      <button class="btn" onclick="toast('⚡ Sincronizando Make...','b')">⚡ Make</button>
+      <button class="btn btn-p" onclick="toast('+ Piso · Próximamente','y')">+ Piso</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="sec act" id="s-dashboard">
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-bar" style="background:var(--b)"></div><div class="kpi-ic" style="background:var(--bl)">🏘️</div><div class="kpi-v">3</div><div class="kpi-l">Propiedades</div><div class="kpi-t b">↑ 2 en preparación</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--g)"></div><div class="kpi-ic" style="background:var(--gl)">🛏️</div><div class="kpi-v">15</div><div class="kpi-l">Habs. ocupadas</div><div class="kpi-t g">75% ocupación media</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--y)"></div><div class="kpi-ic" style="background:var(--yl)">💰</div><div class="kpi-v">4.2k€</div><div class="kpi-l">Ingresos est./mes</div><div class="kpi-t y">Objetivo: 6.500€</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--r)"></div><div class="kpi-ic" style="background:var(--rl)">⚠️</div><div class="kpi-v">2</div><div class="kpi-l">Incidencias abiertas</div><div class="kpi-t r">1 alta prioridad</div></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><div class="ct">Estado de ocupación</div><button class="btn" onclick="go('ocupacion')">Ver detalle →</button></div>
+          <div class="cb" id="dash-occ"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Actividad reciente</div></div>
+          <div class="cb">
+            <div class="ri"><div class="ri-ic" style="background:var(--gl)">✅</div><div style="flex:1"><div class="ri-t">REG_00017 registrado</div><div class="ri-s">SOP16 · Make Esc. A · 27/02</div></div></div>
+            <div class="ri"><div class="ri-ic" style="background:var(--rl)">⚠️</div><div style="flex:1"><div class="ri-t">INC_001 · Fuga Sants HAB2</div><div class="ri-s">Alta prioridad · Maresme asignado</div></div><span class="pill pr">Abierta</span></div>
+            <div class="ri"><div class="ri-ic" style="background:var(--bl)">📅</div><div style="flex:1"><div class="ri-t">3 recordatorios Calendly</div><div class="ri-s">TEST_01,02,03 · Esc. C</div></div></div>
+            <div class="ri"><div class="ri-ic" style="background:var(--yl)">🎨</div><div style="flex:1"><div class="ri-t">Pinturas Andres · docs pendientes</div><div class="ri-s">PROV_70654123M · EN PROCESO</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="g3">
+        <div class="card">
+          <div class="ch"><div class="ct">Sistema Make</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">Escenarios activos</div><div class="irv g">5/5 ✓</div></div>
+            <div class="ir"><div class="irl">SOPs documentados</div><div class="irv g">16/16 ✓</div></div>
+            <div class="ir"><div class="irl">Plantillas activas</div><div class="irv g">36/36 ✓</div></div>
+            <div class="ir"><div class="irl">Calendly pendientes</div><div class="irv y">3 sin evento</div></div>
+            <div class="ir"><div class="irl">Supabase</div><div class="irv y">Pendiente mañana</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Tareas urgentes</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">🔴 Pintar HAB1 Sants</div><div class="irv r">HOY</div></div>
+            <div class="ir"><div class="irl">📋 Docs Pinturas Andres</div><div class="irv y">Esta semana</div></div>
+            <div class="ir"><div class="irl">🔧 INC_001 Fuga Sants</div><div class="irv r">48h máx</div></div>
+            <div class="ir"><div class="irl">💰 Control financiero</div><div class="irv">Día 5</div></div>
+            <div class="ir"><div class="irl">📊 Dashboard mensual</div><div class="irv b">SOP 15</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Proyección 6 meses</div></div>
+          <div class="cb" id="dash-chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PISOS ═══ -->
+    <div class="sec" id="s-pisos">
+      <div class="piso">
+        <div class="piso-bar"></div>
+        <div class="piso-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+            <div><div class="piso-name">Calle Sants 10, 1º3º</div><div class="ri-s">Sants · Barcelona · <code>PROP_SANTS_BARC_20260203151927931</code></div></div>
+            <span class="pill py">Pendiente reformar</span>
+          </div>
+          <div class="piso-stats">
+            <div class="ps"><div class="ps-v">5</div><div class="ps-l">Habitaciones</div></div>
+            <div class="ps"><div class="ps-v">3</div><div class="ps-l">Baños</div></div>
+            <div class="ps"><div class="ps-v">1.600€</div><div class="ps-l">Alquiler prop.</div></div>
+            <div class="ps"><div class="ps-v" style="color:var(--y)">80%</div><div class="ps-l">Ocupación</div></div>
+          </div>
+          <div class="habs">
+            <div class="hab ko"><div class="hab-n">HAB1</div><div class="hab-v r">Pintar</div></div>
+            <div class="hab ok"><div class="hab-n">HAB2</div><div class="hab-v g">850€</div></div>
+            <div class="hab ok"><div class="hab-n">HAB3</div><div class="hab-v g">750€</div></div>
+            <div class="hab ok"><div class="hab-n">HAB4</div><div class="hab-v g">700€</div></div>
+            <div class="hab libre"><div class="hab-n">HAB5</div><div class="hab-v b">Libre</div></div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--g5)">Ocupación</span><span style="font-weight:700;color:var(--y)">80%</span></div>
+            <div class="occ-bar-w"><div class="occ-bar-f" style="width:80%;background:linear-gradient(90deg,var(--y),var(--b))"></div></div>
+          </div>
+          <div class="tags"><span class="tag">Parquet</span><span class="tag">Balcón 12m²</span><span class="tag">Piloto gratis</span><span class="tag">DNI 46700100G</span></div>
+        </div>
+      </div>
+      <div class="piso">
+        <div class="piso-bar"></div>
+        <div class="piso-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+            <div><div class="piso-name">Plaza de Palau 10, 1º3º</div><div class="ri-s">Borne · Barcelona · <code>PROP_BORNE_BARC_20260203151927932</code></div></div>
+            <span class="pill py">Pendiente reformar</span>
+          </div>
+          <div class="piso-stats">
+            <div class="ps"><div class="ps-v">5</div><div class="ps-l">Habitaciones</div></div>
+            <div class="ps"><div class="ps-v">2</div><div class="ps-l">Baños</div></div>
+            <div class="ps"><div class="ps-v">1.600€</div><div class="ps-l">Alquiler prop.</div></div>
+            <div class="ps"><div class="ps-v" style="color:var(--r)">0%</div><div class="ps-l">Ocupación</div></div>
+          </div>
+          <div class="tags"><span class="tag">Facebook lead</span><span class="tag">Hay planos</span><span class="tag">Piloto gratis</span></div>
+        </div>
+      </div>
+      <div class="piso">
+        <div class="piso-bar" style="background:linear-gradient(90deg,var(--g),#2ecc71)"></div>
+        <div class="piso-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+            <div><div class="piso-name">Bulevar Pirineus 5, A 2º3º</div><div class="ri-s">La Morera · Badalona · <code>PROP_PIRI_BADA_20251203151927931</code></div></div>
+            <span class="pill pg">Activo (test)</span>
+          </div>
+          <div class="piso-stats">
+            <div class="ps"><div class="ps-v">5</div><div class="ps-l">Habitaciones</div></div>
+            <div class="ps"><div class="ps-v">3</div><div class="ps-l">Baños</div></div>
+            <div class="ps"><div class="ps-v">1.600€</div><div class="ps-l">Alquiler prop.</div></div>
+            <div class="ps"><div class="ps-v" style="color:var(--g)">70%</div><div class="ps-l">Ocupación</div></div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--g5)">Ocupación</span><span style="font-weight:700;color:var(--g)">70%</span></div>
+            <div class="occ-bar-w"><div class="occ-bar-f" style="width:70%;background:linear-gradient(90deg,var(--g),#2ecc71)"></div></div>
+          </div>
+          <div class="tags"><span class="tag">Google lead</span><span class="tag">Fotos hechas</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ OCUPACIÓN & KPIs ═══ -->
+    <div class="sec" id="s-ocupacion">
+      <div class="kpis5">
+        <div class="kpi"><div class="kpi-bar" style="background:var(--b)"></div><div class="kpi-ic" style="background:var(--bl)">📈</div><div class="kpi-v">75%</div><div class="kpi-l">Ocupación media</div><div class="kpi-t y">Obj: 90%</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--g)"></div><div class="kpi-ic" style="background:var(--gl)">💶</div><div class="kpi-v">750€</div><div class="kpi-l">Ticket medio/hab</div><div class="kpi-t g">↑ vs 680€ mes ant.</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--y)"></div><div class="kpi-ic" style="background:var(--yl)">⏱️</div><div class="kpi-v">18d</div><div class="kpi-l">Tiempo vacante</div><div class="kpi-t y">Obj: &lt;10 días</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--p)"></div><div class="kpi-ic" style="background:var(--pl)">⭐</div><div class="kpi-v">4.7</div><div class="kpi-l">NPS inquilinos</div><div class="kpi-t p">↑ Excelente</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--r)"></div><div class="kpi-ic" style="background:var(--rl)">🔄</div><div class="kpi-v">8%</div><div class="kpi-l">Churn mensual</div><div class="kpi-t g">↓ Bajo</div></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><div class="ct">Ocupación por piso</div></div>
+          <div class="cb" id="occ-pisos"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Evolución 6 meses</div></div>
+          <div class="cb" id="occ-evol"></div>
+        </div>
+      </div>
+      <div class="g3">
+        <div class="card">
+          <div class="ch"><div class="ct">Ingresos por grupo G</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">🎓 G1 Estudiantes</div><div class="irv b">5 inquilinos · 3.250€</div></div>
+            <div class="ir"><div class="irl">⚕️ G3 Sanitarios</div><div class="irv b">4 inquilinos · 3.200€</div></div>
+            <div class="ir"><div class="irl">💼 G5 Directivos</div><div class="irv b">3 inquilinos · 3.150€</div></div>
+            <div class="ir"><div class="irl">👷 G2 Hostelería</div><div class="irv b">2 inquilinos · 1.400€</div></div>
+            <div class="ir"><div class="irl">🎨 G4 Artistas</div><div class="irv b">1 inquilino · 650€</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Resolución incidencias</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">Tiempo medio resolución</div><div class="irv g">31h ✓</div></div>
+            <div class="ir"><div class="irl">Resueltas en &lt;48h</div><div class="irv g">94%</div></div>
+            <div class="ir"><div class="irl">Score proveedor medio</div><div class="irv g">9.2/10</div></div>
+            <div class="ir"><div class="irl">Incidencias este mes</div><div class="irv">3 total</div></div>
+            <div class="ir"><div class="irl">Coste medio/incidencia</div><div class="irv y">87€</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Benchmark competencia</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">Ocupación media sector</div><div class="irv">82%</div></div>
+            <div class="ir"><div class="irl">Virtuo actual</div><div class="irv y">75% ↗</div></div>
+            <div class="ir"><div class="irl">Ticket medio sector BCN</div><div class="irv">720€</div></div>
+            <div class="ir"><div class="irl">Virtuo ticket medio</div><div class="irv g">750€ ↑</div></div>
+            <div class="ir"><div class="irl">Tiempo onboarding sector</div><div class="irv">3-5 días</div></div>
+            <div class="ir"><div class="irl">Virtuo onboarding</div><div class="irv g">&lt;24h ✓</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PIPELINE CRM ═══ -->
+    <div class="sec" id="s-pipeline">
+      <div class="card">
+        <div class="ch"><div class="ct">Pipeline Captación · SOP 1–4</div></div>
+        <div class="cb" id="pipe-stages-wrap" style="overflow-x:auto;padding-bottom:8px"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">Propietarios en pipeline</div></div>
+        <div class="cb">
+          <div class="ri"><div class="ri-ic" style="background:var(--yl)">🏠</div><div style="flex:1"><div class="ri-t">Calle Sants 10 · 5 hab.</div><div class="ri-s">Contacto: 611 xxx xxx · Desde 03/02/26</div></div><span class="pill py">DATOS_TECNICOS_OK</span></div>
+          <div class="ri"><div class="ri-ic" style="background:var(--yl)">🏠</div><div style="flex:1"><div class="ri-t">Plaza de Palau 10 · 5 hab.</div><div class="ri-s">Facebook lead · Desde 03/02/26</div></div><span class="pill py">VISITA_AGENDADA</span></div>
+          <div class="ri"><div class="ri-ic" style="background:var(--gl)">🏠</div><div style="flex:1"><div class="ri-t">Bulevar Pirineus 5 · 5 hab.</div><div class="ri-s">Google lead · Desde 03/12/25</div></div><span class="pill pg">PROPUESTA_FIRMADA</span></div>
+          <div class="ri"><div class="ri-ic" style="background:var(--bl)">🏠</div><div style="flex:1"><div class="ri-t">Nuevo lead · Gràcia · Est. 4 hab.</div><div class="ri-s">Idealista · Recibido hoy</div></div><span class="pill pb">CAPTACION_RECIBIDA</span></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><div class="ct">Conversión por etapa</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">Captación → Visita</div><div class="irv b">68%</div></div>
+            <div class="ir"><div class="irl">Visita → Propuesta</div><div class="irv y">45%</div></div>
+            <div class="ir"><div class="irl">Propuesta → Firma</div><div class="irv g">80%</div></div>
+            <div class="ir"><div class="irl">Conversión total</div><div class="irv g">25%</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Fuentes de captación</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">🔵 Idealista</div><div class="irv">4 leads (40%)</div></div>
+            <div class="ir"><div class="irl">🟢 Facebook Ads</div><div class="irv">3 leads (30%)</div></div>
+            <div class="ir"><div class="irl">🔴 Google Ads</div><div class="irv">2 leads (20%)</div></div>
+            <div class="ir"><div class="irl">🟡 Referidos</div><div class="irv">1 lead (10%)</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MATCHING ═══ -->
+    <div class="sec" id="s-matching">
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="ct">🤝 Matching automático · SOP 7 · G1-G10</div><span class="pill pb">IA-assisted</span></div>
+        <div class="cb">
+          <p style="font-size:13px;color:var(--g5);margin-bottom:14px">Compatibilidad entre inquilinos potenciales y habitaciones disponibles según perfil G1-G10, horarios, estilo de vida y presupuesto.</p>
+          <div class="g2" style="margin-bottom:0">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--g5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">HAB5 Sants · Libre · ~700€</div>
+              <div class="match-card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                  <div><div style="font-size:13px;font-weight:700">Alejandro M. · G1 Estudiante</div><div style="font-size:11px;color:var(--g5)">Erasmus · UB · 650€ presupuesto</div></div>
+                  <div style="text-align:right"><div class="match-score g">92%</div><div style="font-size:10px;color:var(--g5)">match</div></div>
+                </div>
+                <div class="match-bar"><div class="match-fill" style="width:92%;background:linear-gradient(90deg,var(--g),#2ecc71)"></div></div>
+                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px"><span class="tag">Horario diurno ✓</span><span class="tag">Sin mascotas ✓</span><span class="tag">No fumador ✓</span></div>
+              </div>
+              <div class="match-card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                  <div><div style="font-size:13px;font-weight:700">María K. · G3 Sanitaria</div><div style="font-size:11px;color:var(--g5)">Enfermera · Clínic · 800€ pres.</div></div>
+                  <div style="text-align:right"><div class="match-score y">74%</div><div style="font-size:10px;color:var(--g5)">match</div></div>
+                </div>
+                <div class="match-bar"><div class="match-fill" style="width:74%;background:linear-gradient(90deg,var(--y),var(--b))"></div></div>
+                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px"><span class="tag">Turno noche ⚠️</span><span class="tag">Sin mascotas ✓</span></div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--g5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Criterios de matching</div>
+              <div class="card" style="margin-bottom:0">
+                <div class="cb">
+                  <div class="ir"><div class="irl">Presupuesto</div><div class="irv b">30%</div></div>
+                  <div class="ir"><div class="irl">Grupo G1-G10</div><div class="irv b">25%</div></div>
+                  <div class="ir"><div class="irl">Horario de vida</div><div class="irv b">20%</div></div>
+                  <div class="ir"><div class="irl">Mascotas / Fumador</div><div class="irv b">15%</div></div>
+                  <div class="ir"><div class="irl">Duración estancia</div><div class="irv b">10%</div></div>
+                  <div style="margin-top:12px;background:var(--gl);border:1.5px solid #A8E6C1;border-radius:9px;padding:10px 12px;font-size:12px;line-height:1.5"><strong>💡 Recomendación IA:</strong> Alejandro encaja perfectamente en HAB5 Sants. Mismo piso que G5 (Directivo) y G3 (Sanitario diurno). Sin conflicto de horarios.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CHECKINS ═══ -->
+    <div class="sec" id="s-checkins">
+      <div class="g2">
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">🔑 Check-in · SOP 9 · CHK_11</div><span class="pill pg">Plantilla</span></div>
+            <div class="cb" id="checkin-list"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">📦 Check-out · SOP 12 · CIE_22</div><span class="pill pb">Plantilla</span></div>
+            <div class="cb" id="checkout-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">Próximos movimientos</div></div>
+        <div class="cb">
+          <div class="ri"><div class="ri-ic" style="background:var(--gl)">🔑</div><div style="flex:1"><div class="ri-t">Check-in · Alejandro M. · HAB5 Sants</div><div class="ri-s">15/03/2026 · G1 Estudiante · 700€/mes</div></div><span class="pill pg">Programado</span></div>
+          <div class="ri"><div class="ri-ic" style="background:var(--rl)">📦</div><div style="flex:1"><div class="ri-t">Check-out · Piso Pirineus HAB3</div><div class="ri-s">28/03/2026 · Fianza pendiente revisión</div></div><span class="pill py">Pendiente</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ INCIDENCIAS ═══ -->
+    <div class="sec" id="s-incidencias">
+      <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi"><div class="kpi-bar" style="background:var(--r)"></div><div class="kpi-ic" style="background:var(--rl)">🔴</div><div class="kpi-v">1</div><div class="kpi-l">Alta prioridad</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--y)"></div><div class="kpi-ic" style="background:var(--yl)">🟡</div><div class="kpi-v">1</div><div class="kpi-l">Media prioridad</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--g)"></div><div class="kpi-ic" style="background:var(--gl)">✅</div><div class="kpi-v">8</div><div class="kpi-l">Resueltas este mes</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--b)"></div><div class="kpi-ic" style="background:var(--bl)">⏱️</div><div class="kpi-v">31h</div><div class="kpi-l">T. medio resolución</div></div>
+      </div>
+      <div class="inc-card alta" onclick="toast('INC_001 · Abierta','r')">
+        <div class="inc-head">
+          <div style="font-size:10px;font-family:monospace;color:var(--r);font-weight:700;background:var(--rl);padding:2px 7px;border-radius:5px">INC_20260415_001</div>
+          <span class="pill pr">ALTA · Abierta</span>
+        </div>
+        <div class="inc-t">Fuga de agua bajo el lavabo · HAB2</div>
+        <div class="inc-meta">
+          <span class="inc-m">🏠 Sants 10</span>
+          <span class="inc-m">🔧 Limpiezas Maresme asignado</span>
+          <span class="inc-m">📅 Reportada: hoy 09:15</span>
+          <span class="inc-m">⏱️ SLA: 48h máx → 38h restantes</span>
+        </div>
+      </div>
+      <div class="inc-card media" onclick="toast('INC_002 · Media','y')">
+        <div class="inc-head">
+          <div style="font-size:10px;font-family:monospace;color:var(--y);font-weight:700;background:var(--yl);padding:2px 7px;border-radius:5px">INC_20260412_002</div>
+          <span class="pill py">MEDIA · En proceso</span>
+        </div>
+        <div class="inc-t">Bombilla fundida zona común · Pasillo</div>
+        <div class="inc-meta">
+          <span class="inc-m">🏠 Pirineus 5</span>
+          <span class="inc-m">🔧 Sin asignar</span>
+          <span class="inc-m">📅 Reportada: 12/04</span>
+          <span class="inc-m">⏱️ SLA: 72h → OK</span>
+        </div>
+      </div>
+      <div class="inc-card baja" style="opacity:.6">
+        <div class="inc-head">
+          <div style="font-size:10px;font-family:monospace;color:var(--g);font-weight:700;background:var(--gl);padding:2px 7px;border-radius:5px">INC_20260401_003</div>
+          <span class="pill pg">Resuelta · 28h</span>
+        </div>
+        <div class="inc-t">Cerradura difícil · HAB4 Sants</div>
+        <div class="inc-meta"><span class="inc-m">✅ Resuelta por Limpiezas Maresme · Score +1</span></div>
+      </div>
+    </div>
+
+    <!-- ═══ FINANZAS ═══ -->
+    <div class="sec" id="s-finanzas">
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-bar" style="background:var(--g)"></div><div class="kpi-ic" style="background:var(--gl)">💚</div><div class="kpi-v">4.2k€</div><div class="kpi-l">Ingresos marzo</div><div class="kpi-t g">↑ 8% vs feb.</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--r)"></div><div class="kpi-ic" style="background:var(--rl)">❤️</div><div class="kpi-v">3.1k€</div><div class="kpi-l">Gastos marzo</div><div class="kpi-t y">Alquileres+ops</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--b)"></div><div class="kpi-ic" style="background:var(--bl)">💙</div><div class="kpi-v">1.1k€</div><div class="kpi-l">Beneficio neto</div><div class="kpi-t b">Margen 26%</div></div>
+        <div class="kpi"><div class="kpi-bar" style="background:var(--p)"></div><div class="kpi-ic" style="background:var(--pl)">💜</div><div class="kpi-v">6k€</div><div class="kpi-l">Reforma pendiente</div><div class="kpi-t p">Sants HAB1+otros</div></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><div class="ct">P&L mensual · 2026</div></div>
+          <div class="cb" id="fin-pl"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Desglose gastos marzo</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">🏠 Alquileres propietarios (3)</div><div class="irv r">-4.800€</div></div>
+            <div class="ir"><div class="irl">🧹 Limpieza zonas comunes</div><div class="irv r">-360€</div></div>
+            <div class="ir"><div class="irl">💡 Suministros (luz+agua+wifi)</div><div class="irv r">-600€</div></div>
+            <div class="ir"><div class="irl">🔧 Mantenimiento preventivo</div><div class="irv r">-240€</div></div>
+            <div class="ir"><div class="irl">⚙️ Software y gestión</div><div class="irv r">-150€</div></div>
+            <div style="border-top:2px solid var(--bd);margin-top:4px;padding-top:10px;display:flex;justify-content:space-between">
+              <span style="font-weight:700">Total gastos</span>
+              <span class="irv r" style="font-size:15px">-6.150€</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">Desglose ingresos por habitación</div></div>
+        <div class="cb" style="overflow-x:auto">
+          <table class="tbl">
+            <tr><th>Piso</th><th>Hab.</th><th>Inquilino</th><th>Grupo</th><th>Renta</th><th>Estado</th></tr>
+            <tr><td>Sants 10</td><td>HAB2</td><td>Inquilino B</td><td><span class="pill pb">G3</span></td><td class="g" style="font-weight:700">850€</td><td><span class="pill pg">Cobrado</span></td></tr>
+            <tr><td>Sants 10</td><td>HAB3</td><td>Inquilino C</td><td><span class="pill pg">G1</span></td><td class="g" style="font-weight:700">750€</td><td><span class="pill pg">Cobrado</span></td></tr>
+            <tr><td>Sants 10</td><td>HAB4</td><td>Inquilino D</td><td><span class="pill py">G2</span></td><td class="g" style="font-weight:700">700€</td><td><span class="pill pg">Cobrado</span></td></tr>
+            <tr><td>Sants 10</td><td>HAB5</td><td>—</td><td>—</td><td class="r" style="font-weight:700">0€</td><td><span class="pill pb">Libre</span></td></tr>
+            <tr><td>Pirineus 5</td><td>HAB1-3</td><td>Varios</td><td><span class="pill pg">G3</span></td><td class="g" style="font-weight:700">1.900€</td><td><span class="pill pg">Cobrado</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PROVEEDORES ═══ -->
+    <div class="sec" id="s-proveedores">
+      <div class="card">
+        <div class="ch"><div class="ct">Proveedores · Score 0-10 · SOP 14</div></div>
+        <div class="cb">
+          <div class="ri"><div class="ri-ic" style="background:var(--gl);font-size:20px">🧹</div><div style="flex:1"><div class="ri-t">Limpiezas Maresme SL</div><div class="ri-s">Jordi Soler · Limpieza · <code>PROV_F44444444_2025</code></div></div><div style="text-align:right;margin-right:10px"><div style="font-family:Fraunces,serif;font-size:22px;font-weight:700;color:var(--g)">10</div><div style="font-size:10px;color:var(--g5)">/10</div></div><span class="pill pg">ACTIVO</span></div>
+          <div class="ri" style="border:0"><div class="ri-ic" style="background:var(--yl);font-size:20px">🎨</div><div style="flex:1"><div class="ri-t">Pinturas Andres SL</div><div class="ri-s">Andres · Pintura · <code>PROV_70654123M_20260120</code></div></div><div style="text-align:right;margin-right:10px"><div style="font-family:Fraunces,serif;font-size:22px;font-weight:700;color:var(--g1)">—</div><div style="font-size:10px;color:var(--g5)">/10</div></div><span class="pill py">EN PROCESO</span></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><div class="ct">Sistema de puntuación · HUM_28</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">✅ Puntualidad (+1)</div><div class="irv g">+1 por trabajo</div></div>
+            <div class="ir"><div class="irl">✅ Calidad trabajo (+1)</div><div class="irv g">+1 confirmado</div></div>
+            <div class="ir"><div class="irl">⚠️ Retraso &lt;2h (-1)</div><div class="irv y">-1 automático</div></div>
+            <div class="ir"><div class="irl">🚫 No presentarse (-3)</div><div class="irv r">-3 automático</div></div>
+            <div class="ir"><div class="irl">Score mínimo activo</div><div class="irv b">≥5/10</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Categorías pendientes</div></div>
+          <div class="cb">
+            <div class="ir"><div class="irl">🔌 Electricista</div><div class="irv r">Buscando</div></div>
+            <div class="ir"><div class="irl">🚿 Fontanero</div><div class="irv r">Buscando</div></div>
+            <div class="ir"><div class="irl">🔒 Cerrajero 24h</div><div class="irv y">Pendiente</div></div>
+            <div class="ir"><div class="irl">🛋️ Montaje muebles</div><div class="irv y">Pendiente</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ COMUNIDAD ═══ -->
+    <div class="sec" id="s-comunidad">
+      <div class="g2">
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">📢 Anuncios del gestor</div><button class="btn btn-p" onclick="toast('Nuevo anuncio · Próximamente','b')">+ Anuncio</button></div>
+            <div class="cb">
+              <div class="anuncio warn"><div class="anuncio-t">⚠️ Visita técnica HAB1 · Lunes 11/03</div><div class="anuncio-d">Pinturas Andres vendrá a revisar HAB1 para presupuestar la reforma. Por favor tened libre el acceso entre 10-12h.</div></div>
+              <div class="anuncio info"><div class="anuncio-t">📋 Nuevas normas WiFi · 01/03</div><div class="anuncio-d">Nueva red VirtuoSants2 con mayor velocidad. Contraseña en el tablón de la cocina. La red antigua se desconectará el 15/03.</div></div>
+              <div class="anuncio ok"><div class="anuncio-t">✅ INC_003 resuelta · Cerradura HAB4</div><div class="anuncio-d">La cerradura de HAB4 ha sido reparada. Si tenéis cualquier incidencia usad el canal de WhatsApp del piso.</div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="ch"><div class="ct">🧹 Tareas compartidas · Rotación</div></div>
+            <div class="cb" id="com-tasks"></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">📅 Normas de convivencia</div></div>
+            <div class="cb">
+              <div class="ir"><div class="irl">🔕 Silencio nocturno</div><div class="irv">23:00 – 08:00</div></div>
+              <div class="ir"><div class="irl">🍽️ Cocina limpia</div><div class="irv">Después de usar</div></div>
+              <div class="ir"><div class="irl">🧹 Baños comunes</div><div class="irv">Rotación semanal</div></div>
+              <div class="ir"><div class="irl">🚿 Ducha</div><div class="irv">Máx 10 min</div></div>
+              <div class="ir"><div class="irl">🚬 Fumar</div><div class="irv r">Prohibido interior</div></div>
+              <div class="ir"><div class="irl">🐾 Mascotas</div><div class="irv r">No permitido</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MAKE ═══ -->
+    <div class="sec" id="s-make">
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="ct">Escenarios Make · 5 activos</div></div>
+        <div class="cb" style="overflow-x:auto">
+          <table class="tbl">
+            <tr><th>Esc.</th><th>Nombre</th><th>Trigger</th><th>Acción</th><th>SOPs</th><th>Estado</th></tr>
+            <tr><td style="font-weight:800;color:var(--b);font-size:14px">A</td><td style="font-weight:600">Alta Captación</td><td style="color:var(--g5);font-size:12px">Tally submit</td><td style="color:var(--g5);font-size:12px">Sheets + SOP16</td><td><code>1,16</code></td><td><span class="pill pg">Activo</span></td></tr>
+            <tr><td style="font-weight:800;color:var(--b);font-size:14px">B</td><td style="font-weight:600">Propuesta Calendly</td><td style="color:var(--g5);font-size:12px">CAPTACION_RECIBIDA</td><td style="color:var(--g5);font-size:12px">WEL_02 + Calendly</td><td><code>2</code></td><td><span class="pill pg">Activo</span></td></tr>
+            <tr><td style="font-weight:800;color:var(--b);font-size:14px">C</td><td style="font-weight:600">Recordatorios 48h</td><td style="color:var(--g5);font-size:12px">Timer · máx 3</td><td style="color:var(--g5);font-size:12px">Reenvío hasta 3x</td><td><code>1,2</code></td><td><span class="pill pg">Activo</span></td></tr>
+            <tr><td style="font-weight:800;color:var(--b);font-size:14px">D</td><td style="font-weight:600">Visita Técnica</td><td style="color:var(--g5);font-size:12px">Tally kdlbMd</td><td style="color:var(--g5);font-size:12px">SOP3 + DATOS_OK</td><td><code>3</code></td><td><span class="pill pg">Activo</span></td></tr>
+            <tr><td style="font-weight:800;color:var(--b);font-size:14px">E</td><td style="font-weight:600">Propuesta+Firma</td><td style="color:var(--g5);font-size:12px">DATOS_TECNICOS_OK</td><td style="color:var(--g5);font-size:12px">Dossier+propuesta+firma</td><td><code>3,4</code></td><td><span class="pill pg">Activo</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">Pipeline de estados · Flujo automático</div></div>
+        <div class="cb" id="pipe-make" style="overflow-x:auto"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CALENDLY ═══ -->
+    <div class="sec" id="s-calendly">
+      <div class="card">
+        <div class="ch"><div class="ct">Calendly Tracker · Escenario C · Máx 3 recordatorios</div></div>
+        <div class="cb" id="cal-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══ REGISTRO ═══ -->
+    <div class="sec" id="s-registro">
+      <div class="card">
+        <div class="ch"><div class="ct">Registro Contactos · SOP 16 · 17 entradas</div></div>
+        <div class="cb" id="reg-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══ SOPS ═══ -->
+    <div class="sec" id="s-sops"></div>
+
+    <!-- ═══ MENSAJES ═══ -->
+    <div class="sec" id="s-mensajes">
+      <div class="kpis">
+        <div class="kpi" onclick="filterMsg('todos')" style="cursor:pointer"><div class="kpi-bar" style="background:var(--b)"></div><div class="kpi-v b">36</div><div class="kpi-l">Total plantillas</div></div>
+        <div class="kpi" onclick="filterMsg('captacion')" style="cursor:pointer"><div class="kpi-bar" style="background:var(--g)"></div><div class="kpi-v g">8</div><div class="kpi-l">Captación</div></div>
+        <div class="kpi" onclick="filterMsg('inquilinos')" style="cursor:pointer"><div class="kpi-bar" style="background:var(--y)"></div><div class="kpi-v y">16</div><div class="kpi-l">Inquilinos</div></div>
+        <div class="kpi" onclick="filterMsg('operativa')" style="cursor:pointer"><div class="kpi-bar" style="background:var(--p)"></div><div class="kpi-v p">12</div><div class="kpi-l">Operativa</div></div>
+      </div>
+      <div id="msg-list"></div>
+    </div>
+
+    <!-- ═══ CALCULADORA ═══ -->
+    <div class="sec" id="s-calculadora">
+      <div class="calc-grid">
+        <div class="calc-col">
+          <div class="card">
+            <div class="ch"><div class="ct">Datos del piso</div></div>
+            <div class="cb">
+              <div class="frow"><div class="field"><label>Nº habitaciones</label><input class="finp" type="number" id="c-habs" value="5" oninput="calcU()"></div><div class="field"><label>Precio hab. €</label><input class="finp" type="number" id="c-ph" value="650" oninput="calcU()"></div></div>
+              <div class="field"><label>Alquiler propietario €/mes</label><input class="finp" type="number" id="c-alq" value="1600" oninput="calcU()"></div>
+              <div class="field"><label>Ocupación: <strong id="c-ol" style="color:var(--b)">85%</strong></label><input type="range" id="c-oc" min="50" max="100" value="85" style="width:100%;accent-color:var(--b);margin-top:5px" oninput="calcU();document.getElementById('c-ol').textContent=this.value+'%'">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--g5);margin-top:2px"><span>50%</span><span>100%</span></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Gastos fijos</div></div>
+            <div class="cb">
+              <div class="frow"><div class="field"><label>Limpieza €</label><input class="finp" type="number" id="c-li" value="120" oninput="calcU()"></div><div class="field"><label>Suministros €</label><input class="finp" type="number" id="c-su" value="200" oninput="calcU()"></div><div class="field"><label>Mantenimiento €</label><input class="finp" type="number" id="c-ma" value="80" oninput="calcU()"></div><div class="field"><label>Gestión €</label><input class="finp" type="number" id="c-so" value="50" oninput="calcU()"></div></div>
+              <div class="field"><label>Reforma inicial € total</label><input class="finp" type="number" id="c-re" value="3000" oninput="calcU()"></div>
+            </div>
+          </div>
+        </div>
+        <div class="calc-col">
+          <div class="card">
+            <div class="ch"><div class="ct">Resultado</div></div>
+            <div class="cb">
+              <div class="res-boxes">
+                <div class="res-box" style="background:var(--bl);border:1.5px solid #C8D9F5"><div class="rb-l">Beneficio neto/mes</div><div class="rb-v" id="r-b">—</div><div class="rb-s" id="r-bs">Rellena datos</div></div>
+                <div class="res-box" style="background:var(--gl);border:1.5px solid #A8E6C1"><div class="rb-l">ROI anual</div><div class="rb-v" id="r-r">—</div><div class="rb-s" id="r-rs">Sobre reforma</div></div>
+              </div>
+              <div class="ir"><div class="irl">Ingresos brutos</div><div class="irv b" id="r-bru">—</div></div>
+              <div class="ir"><div class="irl">Ingresos reales (<span id="r-op">85</span>%)</div><div class="irv b" id="r-re">—</div></div>
+              <div class="ir"><div class="irl">Alquiler propietario</div><div class="irv r" id="r-al">—</div></div>
+              <div class="ir"><div class="irl">Gastos operativos</div><div class="irv r" id="r-ga">—</div></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0 6px;border-top:2px solid var(--bd);margin-top:4px"><span style="font-weight:700;font-size:14px">Margen neto</span><span id="r-mn" style="font-size:15px;font-weight:800">—</span></div>
+              <div class="ir"><div class="irl">Breakeven reforma</div><div class="irv y" id="r-br">—</div></div>
+              <div id="r-vd"></div>
+            </div>
+          </div>
+          <div class="card"><div class="ch"><div class="ct">Proyección 12 meses</div></div><div class="cb" id="r-ch">—</div></div>
+          <div class="card"><div class="ch"><div class="ct">Escenarios</div></div><div class="cb" id="r-co">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SIMULADOR ═══ -->
+    <div class="sec" id="s-simulador">
+      <div class="sim-prog"><div class="sim-prog-f" id="spf" style="width:14%"></div></div>
+      <div class="sim-grid">
+        <div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 14px;border-bottom:1px solid var(--g1);font-family:Fraunces,serif;font-weight:700;font-size:14px">Flujo completo</div><div id="sim-list" style="padding:8px 10px"></div></div>
+        <div id="sim-content"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+<div class="toasts" id="toasts"></div>
+
+<script>
+var CP='dashboard';
+var TITLES={dashboard:'Dashboard',pisos:'Mis Pisos',ocupacion:'Ocupación & KPIs',pipeline:'Pipeline CRM',matching:'Matching G1-G10',checkins:'Check-ins / Check-outs',incidencias:'Incidencias · SOP 11',finanzas:'Finanzas · P&L · SOP 13',proveedores:'Proveedores · SOP 14',comunidad:'Comunidad',make:'Make · Escenarios A–E',calendly:'Calendly Tracker',registro:'Registro SOP16',sops:'SOPs 1–16',mensajes:'Plantillas de Mensajes',calculadora:'Calculadora ROI',simulador:'Simulador Flujo Inquilino'};
+
+function go(p){
+  var o=document.getElementById('s-'+CP);if(o)o.className='sec';
+  CP=p;
+  var s=document.getElementById('s-'+p);if(s)s.className='sec act';
+  document.getElementById('tbt').textContent=TITLES[p]||p;
+  var ns=document.querySelectorAll('.ni');
+  for(var i=0;i<ns.length;i++){var el=ns[i];el.className=(el.getAttribute('onclick')||'').indexOf("'"+p+"'")>-1?'ni act':'ni';}
+  document.getElementById('aside').classList.remove('open');
+  if(p==='sops')renderSOPs();
+  if(p==='calculadora')calcU();
+  if(p==='simulador')simR();
+  if(p==='calendly')renderCal();
+  if(p==='registro')renderReg();
+  if(p==='checkins')renderCheckins();
+  if(p==='mensajes')renderMsgs('todos');
+  if(p==='comunidad')renderComunidad();
+  if(p==='pipeline')renderPipe();
+  if(p==='make')renderMakePipe();
+  if(p==='ocupacion')renderOcupacion();
+  if(p==='finanzas')renderFinanzas();
+  window.scrollTo(0,0);
+}
+
+function toggleMenu(){document.getElementById('aside').classList.toggle('open');}
+
+function toast(msg,tc){
+  var tw=document.getElementById('toasts');
+  var t=document.createElement('div');
+  t.className='toast';
+  var c={b:'var(--b)',g:'var(--g)',r:'var(--r)',y:'var(--y)'};
+  t.style.borderLeftColor=c[tc]||c.b;
+  t.textContent=msg;
+  tw.appendChild(t);
+  setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},3500);
+}
+
+// ─ DASHBOARD INIT ─
+(function(){
+  var pisos=[{n:'Sants 10',occ:80,habs:5,libre:1},{n:'Pirineus 5',occ:70,habs:5,libre:2},{n:'Palau 10',occ:0,habs:5,libre:5}];
+  var h='';
+  for(var i=0;i<pisos.length;i++){
+    var p=pisos[i];
+    var col=p.occ>=80?'var(--g)':p.occ>=50?'var(--y)':'var(--r)';
+    h+='<div class="ri"><div class="ri-ic" style="background:var(--bl)">🏠</div><div style="flex:1"><div class="ri-t">'+p.n+'</div><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><div class="prog-w"><div class="prog-f" style="width:'+p.occ+'%;background:'+col+'"></div></div><span style="font-size:11px;font-weight:700;color:'+col+';min-width:32px">'+p.occ+'%</span></div></div><span style="font-size:11px;color:var(--g5)">'+p.libre+' libre'+(p.libre!==1?'s':'')+'</span></div>';
+  }
+  var dc=document.getElementById('dash-occ');if(dc)dc.innerHTML=h;
+  var months=['E','F','M','A','M','J'];var vals=[8,12,15,28,42,58];
+  var ch='<div style="display:flex;align-items:flex-end;gap:5px;height:80px">';
+  for(var i=0;i<6;i++)ch+='<div style="flex:1;height:'+vals[i]+'%;background:'+(i<2?'var(--g1)':'linear-gradient(180deg,var(--b),var(--b2))')+';border-radius:4px 4px 0 0;min-height:3px"></div>';
+  ch+='</div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--g5);margin-top:5px">';
+  for(var i=0;i<6;i++)ch+='<span>'+months[i]+'</span>';
+  ch+='</div>';
+  var dc2=document.getElementById('dash-chart');if(dc2)dc2.innerHTML=ch;
+})();
+
+// ─ OCUPACION ─
+function renderOcupacion(){
+  var op=document.getElementById('occ-pisos');
+  if(op){
+    var data=[{n:'Sants 10',occ:80,habs:5,libre:1},{n:'Pirineus 5',occ:70,habs:5,libre:2},{n:'Palau 10 (reforma)',occ:0,habs:5,libre:5}];
+    var h='';
+    for(var i=0;i<data.length;i++){
+      var d=data[i];var col=d.occ>=80?'var(--g)':d.occ>=50?'var(--y)':'var(--r)';
+      h+='<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:700">'+d.n+'</span><span style="font-size:12px;font-weight:700;color:'+col+'">'+d.occ+'% · '+d.libre+' libre'+(d.libre!==1?'s':'')+'</span></div><div class="occ-bar-w" style="height:10px"><div class="occ-bar-f" style="width:'+d.occ+'%;background:'+col+'"></div></div></div>';
+    }
+    op.innerHTML=h;
+  }
+  var oe=document.getElementById('occ-evol');
+  if(oe){
+    var months=['Oct','Nov','Dic','Ene','Feb','Mar'];var vals=[40,50,55,62,70,75];
+    var h2='';
+    for(var i=0;i<6;i++){
+      var col=vals[i]>=80?'var(--g)':vals[i]>=50?'var(--b)':'var(--y)';
+      h2+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:11px;color:var(--g5);width:26px">'+months[i]+'</span><div class="prog-w"><div class="prog-f" style="width:'+vals[i]+'%;background:'+col+'"></div></div><span style="font-size:11px;font-weight:700;color:'+col+';min-width:30px">'+vals[i]+'%</span></div>';
+    }
+    oe.innerHTML=h2;
+  }
+}
+
+// ─ PIPELINE ─
+function renderPipe(){
+  var estados=['CAPTACION_RECIBIDA','EMAIL_CALENDLY','VISITA_AGENDADA','VISITA_OK','DATOS_TECNICOS','PROPUESTA_ENVIADA','FIRMA','ONBOARDING'];
+  var cur=5;
+  var h='<div style="display:flex;align-items:flex-start;gap:0;padding:8px 0;min-width:550px">';
+  for(var i=0;i<estados.length;i++){
+    if(i>0)h+='<div class="pipe-line'+(i<=cur?' done':'')+'"></div>';
+    var dc=i<cur?'done':i===cur?'act2':'todo';
+    h+='<div class="pipe-stage"><div class="pipe-dot '+dc+'" onclick="toast(''+estados[i]+'')" >'+(i<cur?'✓':(i+1))+'</div><div class="pipe-lbl">'+estados[i].replace(/_/g,' ')+'</div></div>';
+  }
+  h+='</div>';
+  var pw=document.getElementById('pipe-stages-wrap');if(pw)pw.innerHTML=h;
+}
+
+function renderMakePipe(){
+  var estados=['CAPTACION_RECIBIDA','EMAIL_CALENDLY','VISITA_AGENDADA','VISITA_OK','DATOS_TECNICOS','PROPUESTA_ENVIADA','FIRMA','ONBOARDING'];
+  var h='<div style="display:flex;align-items:flex-start;gap:0;padding:8px 0;min-width:550px">';
+  for(var i=0;i<estados.length;i++){
+    if(i>0)h+='<div style="flex:1;height:2px;background:linear-gradient(90deg,var(--g),var(--b));min-width:10px;margin-top:14px"></div>';
+    h+='<div style="min-width:60px;text-align:center"><div style="width:28px;height:28px;border-radius:50%;margin:0 auto 5px;background:var(--b);color:var(--w);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">'+(i+1)+'</div><div style="font-size:9px;color:var(--g5);font-weight:600;text-transform:uppercase;letter-spacing:.2px;line-height:1.3;max-width:60px;margin:0 auto">'+estados[i].replace(/_/g,' ')+'</div></div>';
+  }
+  h+='</div>';
+  var pm=document.getElementById('pipe-make');if(pm)pm.innerHTML=h;
+}
+
+// ─ FINANZAS ─
+function renderFinanzas(){
+  var fp=document.getElementById('fin-pl');
+  if(!fp)return;
+  var months=['Ene','Feb','Mar','Abr','May','Jun'];
+  var ing=[1200,2800,4200,0,0,0];var gas=[2100,3100,3100,0,0,0];
+  var h='';
+  for(var i=0;i<6;i++){
+    var b=ing[i]-gas[i];
+    var ipct=ing[i]>0?Math.round((ing[i]/5000)*100):0;
+    var gpct=gas[i]>0?Math.round((gas[i]/5000)*100):0;
+    h+='<div class="fin-month '+(i===2?'sel':'')+'" onclick="toast(''+months[i]+': I='+ing[i]+'€ G='+gas[i]+'€ B='+(b>=0?'+':'')+b+'€',b)">';
+    h+='<div class="fin-m">'+months[i]+'</div>';
+    h+='<div style="flex:1"><div class="fin-bar-w"><div class="fin-bar-i" style="width:'+ipct+'%;height:100%"></div></div><div class="fin-bar-w" style="margin-top:3px"><div class="fin-bar-i" style="width:'+gpct+'%;background:linear-gradient(90deg,var(--r),#e74c3c)"></div></div></div>';
+    h+='<div class="fin-val '+(i<3?(b>0?'g':'r'):'')+'">'+( i<3?((b>=0?'+':'')+b.toLocaleString('es-ES')+'€'):'—')+'</div></div>';
+  }
+  fp.innerHTML=h;
+}
+
+// ─ CHECKINS ─
+var chkIn=[
+  {l:'Entrega 2 copias de llaves',c:false},{l:'Fotos habitación firmadas',c:false},{l:'Inventario CHK_11 completado',c:false},{l:'Alta WhatsApp del piso',c:false},{l:'HUM_27 bienvenida enviado',c:false},{l:'Fianza recibida y registrada',c:false},
+];
+var chkOut=[
+  {l:'Aviso 30 días antes · CIE_22',c:false},{l:'Recogida de llaves',c:false},{l:'Fotos comparativas check-in/out',c:false},{l:'Revisión inventario',c:false},{l:'Devolución fianza si OK',c:false},{l:'FDB_24 · Encuesta feedback',c:false},
+];
+function renderCheckins(){
+  var ci=document.getElementById('checkin-list');
+  var co=document.getElementById('checkout-list');
+  if(ci)ci.innerHTML=buildChecklist(chkIn,'I');
+  if(co)co.innerHTML=buildChecklist(chkOut,'O');
+}
+function buildChecklist(items,prefix){
+  var h='';
+  for(var i=0;i<items.length;i++){
+    h+='<div class="chk-item" onclick="toggleChk(''+prefix+'','+i+')"><div class="chk-box'+(items[i].c?' chk':'')+'">'+( items[i].c?'✓':'')+'</div><span class="chk-lbl" style="'+(items[i].c?'text-decoration:line-through;color:var(--g5)':'')+'">'+items[i].l+'</span></div>';
+  }
+  var done=items.filter(function(x){return x.c;}).length;
+  h+='<div style="margin-top:10px;font-size:11px;font-weight:700;color:var(--g5)">'+done+'/'+items.length+' completados</div>';
+  return h;
+}
+function toggleChk(p,i){
+  var arr=p==='I'?chkIn:chkOut;
+  arr[i].c=!arr[i].c;
+  renderCheckins();
+  if(arr.filter(function(x){return x.c;}).length===arr.length)toast(p==='I'?'✅ Check-in completado!':'✅ Check-out completado!','g');
+}
+
+// ─ COMUNIDAD ─
+function renderComunidad(){
+  var ct=document.getElementById('com-tasks');
+  if(!ct)return;
+  var tasks=[
+    {av:'AL',col:'#1E4DB7',n:'Alejandro',t:'Cocina',d:'Esta semana',ok:true},
+    {av:'MK',col:'#27AE60',n:'María',t:'Baño común',d:'Esta semana',ok:false},
+    {av:'JR',col:'#E74C3C',n:'Jorge',t:'Salón',d:'Esta semana',ok:false},
+    {av:'SL',col:'#8E44AD',n:'Sara',t:'Pasillo',d:'Esta semana',ok:true},
+  ];
+  var h='';
+  for(var i=0;i<tasks.length;i++){
+    var t=tasks[i];
+    h+='<div class="com-task"><div class="com-av" style="background:'+t.col+'">'+t.av+'</div><div style="flex:1"><div class="com-task-t">'+t.n+' · '+t.t+'</div><div class="com-task-s">'+t.d+'</div></div><span class="pill '+(t.ok?'pg':'pgr')+'">'+(t.ok?'Hecha':'Pendiente')+'</span></div>';
+  }
+  ct.innerHTML=h;
+}
+
+// ─ CALENDLY ─
+function renderCal(){
+  var data=[
+    {id:'TEST_01',r:1,color:'b'},{id:'TEST_02',r:2,color:'y'},{id:'TEST_03',r:3,color:'r'},
+    {id:'TEST_04',r:0,max:0,color:'r',blocked:true},{id:'TEST_05',r:0,max:0,color:'g',event:true},
+    {id:'PROP_CORTS_BARC',r:0,color:'gr'},{id:'PROP_SANTS_BARC',r:0,color:'gr'},
+  ];
+  var h='';
+  for(var i=0;i<data.length;i++){
+    var d=data[i];
+    h+='<div style="display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid var(--g1);flex-wrap:wrap"><code style="min-width:170px">'+d.id+'</code><div style="flex:1;font-size:11px;color:var(--g5)">thebestgolf@hotmail.com</div><div style="display:flex;gap:4px">';
+    for(var j=1;j<=3;j++){
+      var active=!d.blocked&&!d.event&&j<=d.r;
+      var bg=d.blocked?'var(--rl)':d.event?'var(--gl)':active?'var(--b)':'var(--g1)';
+      var fc=d.blocked?'var(--r)':d.event?'var(--g)':active?'var(--w)':'var(--g5)';
+      h+='<div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:'+bg+';color:'+fc+'">'+(d.blocked?'✗':d.event?'✓':j)+'</div>';
+    }
+    var estado=d.blocked?'Bloqueado':d.event?'Cita activa':d.r===3?'3/3 Máx':d.r+'/3 rec.';
+    var pc=d.blocked?'pr':d.event?'pg':d.r===3?'pr':d.r>0?'py':'pgr';
+    h+='</div><span class="pill '+pc+'">'+estado+'</span></div>';
+  }
+  document.getElementById('cal-list').innerHTML=h;
+}
+
+// ─ REGISTRO ─
+function renderReg(){
+  var data=[
+    {id:'REG_20260308_00001',a:'Confirmación recepción documentos',t:'Detectado',c:'📧',f:'30/10/25'},
+    {id:'REG_20260308_00002',a:'Confirmación datos de la propiedad',t:'Detectado',c:'💬',f:'30/10/25'},
+    {id:'REG_20260308_00003',a:'Propiedad ya existente',t:'Duplicado',c:'📧',f:'30/10/25'},
+    {id:'REG_20260308_00004',a:'Detección duplicada!',t:'Duplicado',c:'💬',f:'30/10/25'},
+    {id:'REG_20260308_00005',a:'Confirmación recepción documentos',t:'Detectado',c:'📧',f:'03/12/25'},
+    {id:'REG_20260308_00009',a:'Propiedad ya existente — Duplicado',t:'Duplicado',c:'📧',f:'03/12/25'},
+    {id:'REG_20260308_00014',a:'Confirmación recepción documentos',t:'Detectado',c:'📧',f:'20/02/26'},
+    {id:'REG_20260308_00017',a:'Confirmación recepción · Último',t:'Detectado',c:'📧',f:'27/02/26'},
+  ];
+  var h='';
+  for(var i=0;i<data.length;i++){
+    var d=data[i];var dup=d.t==='Duplicado';
+    h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--g1);flex-wrap:wrap"><code>'+d.id+'</code><div style="flex:1;font-size:12px;color:#3D4E6B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">'+d.a+'</div><span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;background:'+(dup?'var(--rl)':'var(--gl)')+';color:'+(dup?'var(--r)':'var(--g)')+'">'+d.t+'</span><span>'+d.c+'</span><span style="font-size:10px;color:var(--g5)">'+d.f+'</span></div>';
+  }
+  document.getElementById('reg-list').innerHTML=h;
+}
+
+// ─ SOPs ─
+function renderSOPs(){
+  var data=[
+    {f:'Captación',ic:'🏗️',col:'var(--b)',sops:[['SOP 01','Detección y registro','Portales → Tally → Sheets · SOL_03'],['SOP 02','Contacto propietario','WEL_02 · Piloto 1 mes · Calendly'],['SOP 03','Visita técnica','Tally kdlbMd · 70+ campos'],['SOP 04','Negociación y cierre','PRO_05 · Firma · Drive auto']]},
+    {f:'Preparación',ic:'🧹',col:'var(--g)',sops:[['SOP 05','Preparación del piso','Limpieza · fotos · PIS_14'],['SOP 06','Publicación','Idealista · Badi · Trovit · INF_06']]},
+    {f:'Inquilinos',ic:'🧑',col:'var(--y)',sops:[['SOP 07','Filtrado inquilinos','Tally → Make → G1-G10'],['SOP 08','Contrato y firma','CHK_10 · LAU + Pack'],['SOP 09','Check-in','CHK_11 · Fotos · HUM_27'],['SOP 10','Mantenimiento','MNT_15/16 · Quincenal'],['SOP 11','Incidencias','INC_17/18 · &lt;48h'],['SOP 12','Check-out','CIE_22 → CIE_23 → FDB_24']]},
+    {f:'Control',ic:'📊',col:'var(--r)',sops:[['SOP 13','Control financiero','Ingresos · gastos · ROI · día 5'],['SOP 14','Supervisión proveedores','Score 0-10 · HUM_28 · trimestral'],['SOP 15','Indicadores y reportes','Dashboard mensual · desviaciones'],['SOP 16','Registro automatizado','registrarContacto() · REF+timestamp']]},
+  ];
+  var h='';
+  for(var i=0;i<data.length;i++){
+    var f=data[i];
+    h+='<div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;margin-top:4px;background:'+f.col+';color:var(--w)">'+f.ic+' '+f.f+'</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">';
+    for(var j=0;j<f.sops.length;j++){
+      var s=f.sops[j];
+      h+='<div style="background:var(--w);border:1.5px solid var(--bd);border-radius:12px;padding:13px 14px;position:relative;overflow:hidden"><div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:'+f.col+'"></div><div style="font-size:10px;font-weight:700;color:var(--g5);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">'+s[0]+'</div><div style="font-size:13px;font-weight:700;margin-bottom:4px">'+s[1]+'</div><div style="font-size:11px;color:var(--g5);line-height:1.5;margin-bottom:9px">'+s[2]+'</div><span class="pill pg">Activo</span></div>';
+    }
+    h+='</div>';
+  }
+  document.getElementById('s-sops').innerHTML=h;
+}
+
+// ─ MENSAJES ─
+var MSGS=[
+  {code:'WEL_02',subj:'Bienvenida al propietario · Piloto gratis',prev:'Hola {{nombre}}, gracias por contactar con Viviendas Virtuo. Nos gustaría presentarte nuestra propuesta de gestión de habitaciones...',cat:'captacion',tipo:'📧 Email'},
+  {code:'SOL_03',subj:'Solicitud recibida · Confirmación automática',prev:'Hola {{nombre}}, hemos recibido tu solicitud correctamente. En menos de 12 horas un coordinador revisará tu perfil...',cat:'captacion',tipo:'📧 Email'},
+  {code:'PRO_05',subj:'Propuesta económica · Viviendas Virtuo',prev:'Estimado {{nombre}}, según los datos técnicos de tu propiedad, nuestra propuesta es: Alquiler garantizado de {{precio}}€/mes...',cat:'captacion',tipo:'📧 Email'},
+  {code:'PIS_14',subj:'Preparación del piso · Checklist',prev:'Hola {{nombre}}, el piso está listo para publicación. Adjuntamos el checklist completado y las fotos del estado inicial...',cat:'captacion',tipo:'📧 Email'},
+  {code:'INF_06',subj:'Piso publicado en portales',prev:'Tu piso ya está publicado en Idealista, Badi y Trovit. El enlace de Idealista es: {{link}}. Recibirás notificaciones de solicitudes...',cat:'captacion',tipo:'📧 Email'},
+  {code:'CHK_10',subj:'Contrato de habitación · Firma digital',prev:'Hola {{nombre}}, adjunto el contrato LAU para la habitación {{hab}} en {{dirección}}. Por favor fírmalo antes del {{fecha}}...',cat:'inquilinos',tipo:'📧 Email'},
+  {code:'CHK_11',subj:'Checklist inventario · Check-in',prev:'Inventario inicial habitación {{hab}}: Cama (1), Armario (1), Escritorio (1), Silla (1). Estado: BIEN. Fotos adjuntas...',cat:'inquilinos',tipo:'📧 Email'},
+  {code:'HUM_27',subj:'¡Bienvenido/a a tu nuevo hogar!',prev:'¡Hola {{nombre}}! 🏠 Bienvenido/a. WiFi: VirtuoHogar / VV2026. Buzón: {{buzon}}. Urgencias: 611 806 603...',cat:'inquilinos',tipo:'💬 WhatsApp'},
+  {code:'MNT_15',subj:'Control quincenal · ¿Todo bien?',prev:'Hola {{nombre}} 👋 Control quincenal. ¿Todo en orden en tu habitación? ✅ Todo bien / ⚠️ Hay algo a revisar',cat:'inquilinos',tipo:'💬 WhatsApp'},
+  {code:'MNT_16',subj:'Respuesta control quincenal',prev:'Gracias {{nombre}}. Hemos registrado tu respuesta. Si en algún momento necesitas algo, escríbenos aquí mismo 🙂',cat:'inquilinos',tipo:'💬 WhatsApp'},
+  {code:'INC_17',subj:'Incidencia registrada · Estamos en ello',prev:'Hola {{nombre}}, hemos recibido tu incidencia ({{tipo}}). Referencia: {{id}}. Te contactamos en menos de 2 horas...',cat:'inquilinos',tipo:'💬 WhatsApp'},
+  {code:'INC_18',subj:'Incidencia resuelta · Confirmación',prev:'Hola {{nombre}}, la incidencia {{id}} ha sido resuelta. ¿Puedes confirmar que todo está correcto? Tu valoración nos ayuda...',cat:'inquilinos',tipo:'💬 WhatsApp'},
+  {code:'CIE_22',subj:'Aviso fin de contrato · 30 días',prev:'Hola {{nombre}}, tu contrato de la habitación {{hab}} finaliza el {{fecha}}. ¿Deseas renovar o cuándo harías la entrega de llaves?...',cat:'inquilinos',tipo:'📧 Email'},
+  {code:'CIE_23',subj:'Check-out · Inventario y fianza',prev:'Check-out completado. Estado: {{estado}}. Fianza: {{fianza}}€. Devolución: {{devolucion}}€. Plazo: 30 días hábiles...',cat:'inquilinos',tipo:'📧 Email'},
+  {code:'FDB_24',subj:'¿Cómo fue tu experiencia? · Valoración',prev:'¡Hola {{nombre}}! Gracias por haber sido parte de Viviendas Virtuo. Tu opinión nos ayuda a mejorar. [Encuesta 2 min]',cat:'inquilinos',tipo:'📧 Email'},
+  {code:'HUM_28',subj:'Evaluación proveedor · Trimestral',prev:'Hola {{nombre}}, realizamos la evaluación trimestral de proveedores. Tu puntuación actual: {{score}}/10. Trabajos completados: {{num}}...',cat:'operativa',tipo:'📧 Email'},
+];
+var msgFiltro='todos';
+function filterMsg(cat){msgFiltro=cat;renderMsgs(cat);}
+function renderMsgs(cat){
+  var ml=document.getElementById('msg-list');if(!ml)return;
+  var filtered=cat==='todos'?MSGS:MSGS.filter(function(m){return m.cat===cat||('captacion'===cat&&m.cat==='captacion')||('inquilinos'===cat&&m.cat==='inquilinos')||('operativa'===cat&&m.cat==='operativa');});
+  var h='';
+  for(var i=0;i<filtered.length;i++){
+    var m=filtered[i];
+    h+='<div class="msg-card" onclick="toast('✅ '+m.code+' copiado al portapapeles','g')">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
+      +'<div><code class="msg-code">'+m.code+'</code><span style="font-size:10px;color:var(--g5);margin-left:8px">'+m.tipo+'</span></div>'
+      +'<span class="pill '+(m.cat==='captacion'?'pg':m.cat==='inquilinos'?'pb':'pp')+'">'+m.cat+'</span>'
+      +'</div>'
+      +'<div class="msg-subj">'+m.subj+'</div>'
+      +'<div class="msg-prev">'+m.prev+'</div>'
+      +'<button class="copy-btn">📋 Copiar</button>'
+      +'</div>';
+  }
+  ml.innerHTML=h||'<div style="text-align:center;color:var(--g5);padding:20px">Sin resultados</div>';
+}
+
+// ─ CALCULADORA ─
+function calcU(){
+  var v=function(id,d){var e=document.getElementById(id);return e?(+e.value||d):d;};
+  var H=v('c-habs',5),PH=v('c-ph',650),ALQ=v('c-alq',1600),OC=v('c-oc',85);
+  var LI=v('c-li',120),SU=v('c-su',200),MA=v('c-ma',80),SO=v('c-so',50),RE=v('c-re',3000);
+  var BRU=H*PH,REAL=Math.round(BRU*(OC/100)),GAST=LI+SU+MA+SO;
+  var BEN=REAL-ALQ-GAST,BENA=BEN*12;
+  var ROI=RE>0?Math.round((BENA/RE)*100):999;
+  var BRK=BEN>0?Math.ceil(RE/BEN):null;
+  var BC=BEN>300?'var(--g)':BEN>0?'var(--y)':'var(--r)';
+  var S=function(id,val,col){var e=document.getElementById(id);if(e){e.textContent=val;if(col)e.style.color=col;}};
+  S('r-b',(BEN>=0?'+':'')+BEN.toLocaleString('es-ES')+'€',BC);
+  S('r-bs','Con '+OC+'% ocup. · '+H+' hab.');
+  S('r-r',ROI>999?'∞':ROI+'%',ROI>50?'var(--g)':ROI>20?'var(--y)':'var(--r)');
+  S('r-rs',BRK?'Recuperas en '+BRK+' meses':'—');
+  S('r-bru',BRU.toLocaleString('es-ES')+'€');S('r-re',REAL.toLocaleString('es-ES')+'€');
+  S('r-op',OC);S('r-al','-'+ALQ.toLocaleString('es-ES')+'€');S('r-ga','-'+GAST.toLocaleString('es-ES')+'€');
+  var mn=document.getElementById('r-mn');if(mn){mn.textContent=(BEN>=0?'+':'')+BEN.toLocaleString('es-ES')+'€';mn.style.color=BC;}
+  S('r-br',BRK?BRK+' meses':'No rentable');
+  var vd=document.getElementById('r-vd');
+  if(vd)vd.innerHTML=BEN>400?'<div class="verdict ok"><span style="font-size:18px">🚀</span><span><strong>Muy rentable.</strong> Negocia con confianza.</span></div>':BEN>100?'<div class="verdict ok"><span style="font-size:18px">✅</span><span><strong>Rentable.</strong> Margen positivo.</span></div>':BEN>0?'<div class="verdict warn"><span style="font-size:18px">⚠️</span><span><strong>Ajustado.</strong> Solo '+BEN+'€/mes.</span></div>':'<div class="verdict bad"><span style="font-size:18px">🚫</span><span><strong>No rentable.</strong> Pierdes '+Math.abs(BEN)+'€/mes.</span></div>';
+  var M=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],MX=REAL*1.1,ch='';
+  for(var i=0;i<12;i++){var R2=Math.round(REAL*(0.9+((i*7)%18)*.012)),B2=R2-ALQ-GAST,pct=Math.max(2,Math.round((R2/MX)*100)),col=i<3?'var(--g1)':B2>0?'var(--g)':'var(--r)';ch+='<div class="proj-row"><div class="proj-lbl">'+M[i]+'</div><div class="proj-bw"><div class="proj-bf" style="width:'+pct+'%;background:'+col+'"></div></div><div class="proj-v '+(B2>=0?'g':'r')+'">'+(B2>=0?'+':'')+B2.toLocaleString('es-ES')+'€</div></div>';}
+  var rc=document.getElementById('r-ch');if(rc)rc.innerHTML=ch;
+  var A1=Math.round((H+1)*PH*(OC/100))-ALQ-GAST,A2=REAL-Math.round(ALQ*.9)-GAST;
+  var rco=document.getElementById('r-co');
+  if(rco)rco.innerHTML='<div class="ir"><div class="irl">Actual ('+H+' hab.)</div><div class="irv '+(BEN>0?'g':'r')+'">'+(BEN>=0?'+':'')+BEN.toLocaleString('es-ES')+'€/mes</div></div><div class="ir"><div class="irl">+'+(H+1)+' hab. (+1)</div><div class="irv '+(A1>0?'g':'r')+'">'+(A1>=0?'+':'')+A1.toLocaleString('es-ES')+'€/mes</div></div><div class="ir"><div class="irl">Alquiler -10%</div><div class="irv '+(A2>0?'g':'r')+'">'+(A2>=0?'+':'')+A2.toLocaleString('es-ES')+'€/mes</div></div><div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--bd);margin-top:4px"><span style="font-weight:700">Beneficio anual</span><span style="font-weight:800;font-size:15px;color:'+(BENA>0?'var(--g)':'var(--r)')+'">'+(BENA>=0?'+':'')+BENA.toLocaleString('es-ES')+'€</span></div>';
+}
+
+// ─ SIMULADOR ─
+var SS=[
+  {ic:'📩',n:'Solicitud',sop:'SOP 07'},
+  {ic:'👤',n:'Filtrado',sop:'SOP 07'},
+  {ic:'📄',n:'Contrato',sop:'SOP 08'},
+  {ic:'🔑',n:'Check-in',sop:'SOP 09'},
+  {ic:'🔧',n:'Mantenim.',sop:'SOP 10'},
+  {ic:'⚠️',n:'Incidencia',sop:'SOP 11'},
+  {ic:'📦',n:'Check-out',sop:'SOP 12'},
+];
+var SH=[
+  '<div class="trig"><strong>⚡ Make · Escenario A</strong><br>Tally form submit → flujo activado automáticamente.</div><div class="msg em"><div class="msg-tp em">📧 SOL_03</div><div class="msg-tx">Hola <strong>Alejandro</strong>, hemos recibido tu solicitud. En &lt;12h un coordinador revisará tu perfil.</div></div><div class="msg sy"><div class="msg-tp sy">⚡ SOP16</div><div class="msg-tx">REG_20260401_00018 registrado en Sheets.</div></div>',
+  '<div class="grupos" id="gps"></div><div class="acard"><div class="acard-t">📋 Docs</div><div class="acard-d"><ul class="cl"><li>DNI/NIE</li><li>Justificante ingresos</li><li>Aval si aplica</li><li class="arr">Firma → siguiente</li></ul></div></div>',
+  '<div class="acard"><div class="acard-t">Contrato LAU · HAB2 · 1.050€/mes</div><div class="acard-d"><ul class="cl"><li>12 meses · Fianza 2.100€</li><li>Pack Basic incluido</li></ul></div></div><div class="msg em"><div class="msg-tp em">📧 CHK_10</div><div class="msg-tx">Hola <strong>Alejandro</strong>, adjunto contrato. Firma antes del <strong>28/03/2026</strong>.</div></div><div class="msg sy"><div class="msg-tp sy">⚡ Sheets → FIRMADO</div><div class="msg-tx">Estado actualizado automáticamente.</div></div>',
+  '<div class="acard"><div class="acard-t">📋 CHK_11 · Inventario</div><div class="acard-d"><ul class="cl"><li>2 copias de llaves</li><li>Fotos firmadas</li><li>Alta WhatsApp piso</li><li class="arr">HUM_27 automático</li></ul></div></div><div class="msg wa"><div class="msg-tp wa">💬 HUM_27</div><div class="msg-tx">¡Bienvenido/a <strong>Alejandro</strong>! 🏠🎉<br>📶 VirtuoSants / VV2026<br>📞 611 806 603</div></div>',
+  '<div class="trig"><strong>⏰ Timer · 15 días</strong><br>Sin respuesta 48h → alerta coordinador.</div><div class="msg wa"><div class="msg-tp wa">💬 MNT_15</div><div class="msg-tx">Hola <strong>Alejandro</strong> 👋 ¿Todo OK?<br>✅ Bien / ⚠️ Hay algo</div></div><div class="msg wa"><div class="msg-tp wa">💬 MNT_16 · Respuesta</div><div class="msg-tx">✅ Todo perfecto, gracias!</div></div>',
+  '<div class="msg wa"><div class="msg-tp wa">💬 Inquilino</div><div class="msg-tx">Fuga bajo el lavabo 😟</div></div><div style="text-align:center;font-size:11px;color:var(--g5);margin:5px 0">↓ Make · INC_17 automático</div><div class="msg sy"><div class="msg-tp sy">⚡ INC_20260415_001 · ALTA</div><div class="msg-tx">Registrada · Sants HAB2 · Maresme asignado</div></div><div style="text-align:center;font-size:11px;color:var(--g5);margin:5px 0">↓ INC_18 · Cierre</div><div class="msg wa"><div class="msg-tp wa">💬 Resuelta ✅</div><div class="msg-tx">Maresme Score +1 → 10/10</div></div>',
+  '<div class="trig"><strong>📅 30 días antes del fin</strong><br>Make activa el flujo solo.</div><div class="msg em"><div class="msg-tp em">📧 CIE_22</div><div class="msg-tx">Hola <strong>Alejandro</strong>, contrato finaliza 31/03/2027. ¿Renueva?</div></div><div class="acard"><div class="acard-t">CIE_23 · FDB_24</div><div class="acard-d"><ul class="cl"><li>Llaves · fotos</li><li>Fianza devuelta</li><li class="arr">FDB_24 feedback · HAB → LIBRE</li></ul></div></div><div style="background:var(--gl);border:1.5px solid #A8E6C1;border-radius:9px;padding:10px 12px;font-size:13px;margin-top:6px"><strong>🎉 Flujo completado.</strong> HAB2 → LIBRE.</div>',
+];
+var simStep=0;
+function simG(i){simStep=i;simR();}
+function simR(){
+  var sp=document.getElementById('spf');if(sp)sp.style.width=Math.round(((simStep+1)/SS.length)*100)+'%';
+  var sl=document.getElementById('sim-list');if(!sl)return;
+  var h='';
+  for(var i=0;i<SS.length;i++){
+    var done=i<simStep,cur=i===simStep;
+    h+='<div class="sli '+(done?'done':cur?'cur':'todo')+'" onclick="simG('+i+')">'+(i<SS.length-1?'<div class="sl-line"></div>':'')+'<div class="sn">'+(done?'✓':(i+1))+'</div><div><div class="sl-n">'+SS[i].ic+' '+SS[i].n+'</div><div class="sl-m">'+SS[i].sop+'</div></div></div>';
+  }
+  sl.innerHTML=h;
+  var tl='<div class="tl">';
+  for(var i=0;i<SS.length;i++){
+    if(i>0)tl+='<div class="tl-l'+(i<=simStep?' done':'')+'"></div>';
+    var dc=i<simStep?'done':i===simStep?'cur':'todo';
+    tl+='<div class="tl-col"><div class="tl-d '+dc+'" onclick="simG('+i+')">'+(i<simStep?'✓':SS[i].ic)+'</div><div class="tl-lbl">'+SS[i].n+'</div></div>';
+  }
+  tl+='</div>';
+  var btns='<div class="sim-btns">'+(simStep>0?'<button class="btn-bk" onclick="simG('+(simStep-1)+')">← Atrás</button>':'')+(simStep<SS.length-1?'<button class="btn-nxt" onclick="simG('+(simStep+1)+')">Siguiente →</button>':'<button class="btn-ok" onclick="simG(0)">🔄 Reiniciar</button>')+'</div>';
+  document.getElementById('sim-content').innerHTML='<div class="sc">'+tl+'<div class="sc-badge pb">'+SS[simStep].ic+' '+SS[simStep].n+' · '+SS[simStep].sop+'</div>'+SH[simStep]+btns+'</div>';
+  var gps=document.getElementById('gps');
+  if(gps){
+    var grupos=[['🎓','G1','Estud.'],['👷','G2','Hostel.'],['⚕️','G3','Sanit.'],['🎨','G4','Artista'],['💼','G5','Direct.']];
+    var gh='';for(var i=0;i<grupos.length;i++)gh+='<div class="gc'+(i===0?' sel':'')+'" onclick="selG(this)"><div class="gc-ic">'+grupos[i][0]+'</div><div class="gc-n">'+grupos[i][1]+'</div><div class="gc-s">'+grupos[i][2]+'</div></div>';
+    gps.innerHTML=gh;
+  }
+}
+function selG(el){var ps=el.parentNode.querySelectorAll('.gc');for(var i=0;i<ps.length;i++)ps[i].classList.remove('sel');el.classList.add('sel');}
+
+// INIT
+setTimeout(function(){toast('🏠 Viviendas Virtuo v2.0 · Sistema completo cargado','g');},600);
+setTimeout(function(){toast('⚠️ HAB1 Sants pendiente de pintar','y');},2000);
+</script>
+</body>
+</html>

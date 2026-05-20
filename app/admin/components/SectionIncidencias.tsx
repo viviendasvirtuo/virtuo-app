@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { C, card } from './tokens';
+import { C, card, pill } from './tokens';
 
 interface Incidencia {
   id: string;

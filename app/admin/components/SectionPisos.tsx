@@ -152,7 +152,7 @@ export default function SectionPisos() {
                   <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 4 }} />
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {(unis.length > 0 ? unis : Array.from({ length: total }, (_, k) => ({ id: `s${k}`, codigo: `HAB${k + 1}`, estado: k < ocp ? 'OCUPADA' : 'LIBRE' }))).map((u: { id: string; codigo: string; estado: string }) => (
+                  {(unis.length > 0 ? unis : Array.from({ length: total }, (_, k) => ({ id: `s${k}`, codigo: `HAB${k + 1}`, estado: k < ocp ? 'OCUPADA' : 'LIBRE' }))).map((u) => (
                     <span key={u.id} style={{
                       background: u.estado === 'OCUPADA' ? C.bl : C.g1,
                       color: u.estado === 'OCUPADA' ? C.b : C.g5,

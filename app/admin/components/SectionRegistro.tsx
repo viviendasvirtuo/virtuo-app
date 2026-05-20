@@ -1,4 +1,4 @@
-import { C, card, cardHead } from './tokens';
+import { C, cardHead } from './tokens';
 
 interface RegistroRow {
   id: string;

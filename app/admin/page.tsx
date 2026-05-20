@@ -3,15 +3,14 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Propiedad = {
+interface Propiedad {
   id: string;
   nombre: string;
-  [key: string]: unknown;
-};
+}
 
 export default function AdminPage() {
   const [propiedades, setPropiedades] = useState<Propiedad[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,12 +18,12 @@ export default function AdminPage() {
 
     supabase
       .from("propiedades")
-      .select("*")
+      .select("id, nombre")
       .then(({ data, error }) => {
         if (error) {
-          setError(`${error.code}: ${error.message}`);
+          setErrorMsg(`${error.code}: ${error.message}`);
         } else {
-          setPropiedades(data ?? []);
+          setPropiedades((data as Propiedad[]) ?? []);
         }
         setLoading(false);
       });
@@ -36,14 +35,14 @@ export default function AdminPage() {
 
       {loading && <p className="text-gray-500">Cargando propiedades...</p>}
 
-      {error && (
+      {errorMsg && (
         <div className="bg-red-50 border border-red-300 rounded p-4 text-red-700 font-mono text-sm">
           <p className="font-bold mb-1">Error de conexión:</p>
-          <p>{error}</p>
+          <p>{errorMsg}</p>
         </div>
       )}
 
-      {!loading && !error && propiedades.length === 0 && (
+      {!loading && !errorMsg && propiedades.length === 0 && (
         <p className="text-gray-500">No hay propiedades en la tabla.</p>
       )}
 
@@ -54,7 +53,7 @@ export default function AdminPage() {
               key={p.id}
               className="border rounded p-3 bg-white shadow-sm text-gray-800"
             >
-              {p.nombre ?? JSON.stringify(p)}
+              {p.nombre}
             </li>
           ))}
         </ul>

@@ -1,4 +1,3 @@
-import React from 'react';
 'use client';
 import { useState, useMemo } from 'react';
 import { C, card, cardHead, cardBody } from './tokens';

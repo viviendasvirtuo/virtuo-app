@@ -72,7 +72,7 @@ export default function SectionDashboard() {
   if (loading) return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
-        {[1,2,3,4].map(i => <Skeleton key={i} h={90} />)}
+        {([90,90,90,90] as number[]).map((h, i) => <div key={i} style={{ background: C.g1, borderRadius: 10, height: h, marginBottom: 14 }} />)}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
         <Skeleton h={200} /><Skeleton h={200} />
@@ -86,7 +86,7 @@ export default function SectionDashboard() {
     </div>
   );
 
-  const altasCount = data?.alertas.filter(a => a.prioridad === 'alta').length ?? 2;
+  const altasCount = data?.alertas.filter((a: AlertaRow) => a.prioridad === 'alta').length ?? 2;
   const ocpPct = data && data.unidades ? Math.round((data.ocupadas / data.unidades) * 100) : 0;
 
   const pisoOcup = [

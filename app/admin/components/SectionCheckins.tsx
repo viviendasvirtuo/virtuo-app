@@ -30,8 +30,8 @@ export default function SectionCheckins() {
   const [checkinDone, setCheckinDone] = useState<boolean[]>(new Array(CHECKIN_ITEMS.length).fill(false));
   const [checkoutDone, setCheckoutDone] = useState<boolean[]>(new Array(CHECKOUT_ITEMS.length).fill(false));
 
-  const toggleIn = (i: number) => setCheckinDone(prev => prev.map((v, j) => j === i ? !v : v));
-  const toggleOut = (i: number) => setCheckoutDone(prev => prev.map((v, j) => j === i ? !v : v));
+  const toggleIn = (i: number) => setCheckinDone((prev: boolean[]) => prev.map((v: boolean, j: number) => j === i ? !v : v));
+  const toggleOut = (i: number) => setCheckoutDone((prev: boolean[]) => prev.map((v: boolean, j: number) => j === i ? !v : v));
 
   const inDone = checkinDone.filter(Boolean).length;
   const outDone = checkoutDone.filter(Boolean).length;

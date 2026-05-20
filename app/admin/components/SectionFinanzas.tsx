@@ -54,10 +54,10 @@ export default function SectionFinanzas() {
     load();
   }, []);
 
-  const totalIngresos = meses.reduce((a, m) => a + m.ingresos, 0);
-  const totalGastos = meses.reduce((a, m) => a + m.gastos, 0);
-  const totalBeneficio = meses.reduce((a, m) => a + m.beneficio, 0);
-  const maxVal = Math.max(...meses.map(m => Math.max(m.ingresos, m.gastos)));
+  const totalIngresos = meses.reduce((a: number, m: MesData) => a + m.ingresos, 0);
+  const totalGastos = meses.reduce((a: number, m: MesData) => a + m.gastos, 0);
+  const totalBeneficio = meses.reduce((a: number, m: MesData) => a + m.beneficio, 0);
+  const maxVal = Math.max(...meses.map((m: MesData) => Math.max(m.ingresos, m.gastos)));
 
   if (loading) return (
     <div>
@@ -90,7 +90,7 @@ export default function SectionFinanzas() {
         <div style={card}>
           <div style={cardHead}>📅 P&L Mensual</div>
           <div style={cardBody}>
-            {meses.map((m, i) => (
+            {meses.map((m: MesData, i: number) => (
               <div
                 key={i}
                 onClick={() => setSelectedMes(i)}

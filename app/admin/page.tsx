@@ -106,7 +106,7 @@ export default function AdminPage() {
       >
         <Topbar
           title={sectionTitles[active] ?? 'Admin'}
-          onMenuToggle={() => setMenuOpen((v) => !v)}
+          onMenuToggle={() => setMenuOpen((v: boolean) => !v)}
         />
         <div style={{ padding: '20px 22px', flex: 1 }} className="admin-content" key={active}>
           <ActiveSection active={active} />

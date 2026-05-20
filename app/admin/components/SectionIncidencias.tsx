@@ -54,9 +54,9 @@ export default function SectionIncidencias() {
     load();
   }, []);
 
-  const altas = data.filter(i => i.prioridad === 'alta').length;
-  const medias = data.filter(i => i.prioridad === 'media').length;
-  const resueltas = data.filter(i => i.estado === 'RESUELTA').length;
+  const altas = data.filter((i: Incidencia) => i.prioridad === 'alta').length;
+  const medias = data.filter((i: Incidencia) => i.prioridad === 'media').length;
+  const resueltas = data.filter((i: Incidencia) => i.estado === 'RESUELTA').length;
 
   if (loading) return (
     <div>
@@ -86,7 +86,7 @@ export default function SectionIncidencias() {
       </div>
 
       <div>
-        {data.map(inc => {
+        {data.map((inc: Incidencia) => {
           const pStyle = priorityPill(inc.prioridad);
           const borderColor = priorityColor(inc.prioridad);
           const isResuelta = inc.estado === 'RESUELTA';

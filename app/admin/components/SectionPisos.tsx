@@ -73,9 +73,9 @@ export default function SectionPisos() {
 
         const pList: Propiedad[] = [];
         const uMap: Record<string, Unidad[]> = {};
-        (props as Array<Record<string, unknown>>).forEach((p, idx) => {
-          const unis = (p.unidades as Unidad[] | null) ?? [];
-          const ocupadas = unis.filter(u => u.estado === 'OCUPADA').length;
+        (props as Array<Record<string, unknown>>).forEach((p: Record<string, unknown>, idx: number) => {
+          const unis: Unidad[] = (p.unidades as Unidad[] | null) ?? [];
+          const ocupadas = unis.filter((u: Unidad) => u.estado === 'OCUPADA').length;
           pList.push({
             id: String(p.id),
             nombre: String(p.nombre ?? ''),
@@ -116,10 +116,10 @@ export default function SectionPisos() {
     <div>
       <style>{`@media(max-width:700px){.pisos-grid{grid-template-columns:1fr!important}}`}</style>
       <div className="pisos-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        {pisos.map(p => {
+        {pisos.map((p: Propiedad) => {
           const unis = unidades[p.id] ?? [];
           const total = p.total_unidades ?? unis.length;
-          const ocp = p.ocupadas ?? unis.filter(u => u.estado === 'OCUPADA').length;
+          const ocp = p.ocupadas ?? unis.filter((u: Unidad) => u.estado === 'OCUPADA').length;
           const pct = total > 0 ? Math.round((ocp / total) * 100) : 0;
           const color = p.color ?? C.b;
           const rent = p.alquiler_propietario ?? 0;
@@ -156,7 +156,7 @@ export default function SectionPisos() {
                   <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 4 }} />
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {(unis.length > 0 ? unis : Array.from({ length: total }, (_, k) => ({ id: `s${k}`, codigo: `HAB${k + 1}`, estado: k < ocp ? 'OCUPADA' : 'LIBRE' }))).map(u => (
+                  {(unis.length > 0 ? unis : Array.from({ length: total }, (_, k) => ({ id: `s${k}`, codigo: `HAB${k + 1}`, estado: k < ocp ? 'OCUPADA' : 'LIBRE' }))).map((u: { id: string; codigo: string; estado: string }) => (
                     <span key={u.id} style={{
                       background: u.estado === 'OCUPADA' ? C.bl : C.g1,
                       color: u.estado === 'OCUPADA' ? C.b : C.g5,

@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 import { useState, useMemo } from 'react';
 import { C, card, cardHead, cardBody } from './tokens';
@@ -45,7 +46,7 @@ export default function SectionCalculadora() {
         <span style={{ fontSize: 12, color: C.g5, fontFamily: "'Fraunces', serif", fontWeight: 700, minWidth: 60, textAlign: 'right' }}>{prefix}{value}{suffix}</span>
         <input
           type="number" value={value}
-          onChange={e => onChange(Number(e.target.value))}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(Number(e.target.value))}
           min={min} max={max} step={step}
           style={{ width: 70, padding: '4px 8px', borderRadius: 7, border: `1.5px solid ${C.bd}`, fontSize: 13, textAlign: 'right', outline: 'none', fontFamily: 'inherit' }}
         />
@@ -68,7 +69,7 @@ export default function SectionCalculadora() {
                 <span style={{ fontSize: 13, color: C.g9 }}>Ocupación</span>
                 <span style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: C.b }}>{ocupacion}%</span>
               </div>
-              <input type="range" min={50} max={100} value={ocupacion} onChange={e => setOcupacion(Number(e.target.value))}
+              <input type="range" min={50} max={100} value={ocupacion} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOcupacion(Number(e.target.value))}
                 style={{ width: '100%', accentColor: C.b }} />
             </div>
             <InputRow label="Limpieza/mes" value={limpieza} onChange={setLimpieza} min={0} max={1000} suffix="€" />

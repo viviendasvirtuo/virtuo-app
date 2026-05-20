@@ -1,4 +1,4 @@
-import { C, card, cardHead, cardBody } from './tokens';
+import { C, card, cardHead } from './tokens';
 
 interface CalendlyRow {
   id: string;

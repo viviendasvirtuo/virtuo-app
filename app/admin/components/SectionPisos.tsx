@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { C, card, cardHead, cardBody } from './tokens';
+import { C, card } from './tokens';
 
 interface Propiedad {
   id: string;
@@ -59,7 +59,6 @@ export default function SectionPisos() {
   const [pisos, setPisos] = useState<Propiedad[]>([]);
   const [unidades, setUnidades] = useState<Record<string, Unidad[]>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -102,9 +101,6 @@ export default function SectionPisos() {
     load();
   }, []);
 
-  if (error) return (
-    <div style={{ background: C.rl, border: `1.5px solid ${C.r}`, borderRadius: 10, padding: 16, color: C.r }}>⚠️ {error}</div>
-  );
 
   if (loading) return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>

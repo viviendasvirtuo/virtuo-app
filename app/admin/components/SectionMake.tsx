@@ -1,4 +1,4 @@
-import { C, card, cardHead, cardBody } from './tokens';
+import { C, cardHead } from './tokens';
 
 const ESCENARIOS = [
   { esc: 'A', nombre: 'Captación automatizada', trigger: 'Formulario web recibido', accion: 'Crear lead + enviar email SOL_03', sops: 'SOP01, SOP02', estado: 'ACTIVO', color: C.g },

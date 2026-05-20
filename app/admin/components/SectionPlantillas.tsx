@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { C, card, cardHead } from './tokens';
+import { C, card } from './tokens';
 
 type Categoria = 'todos' | 'captacion' | 'inquilinos' | 'operativa';
 

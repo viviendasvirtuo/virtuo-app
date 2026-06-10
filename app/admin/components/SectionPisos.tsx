@@ -51,14 +51,14 @@ export default function SectionPisos() {
 
       if (propsError) {
         console.error('[SectionPisos] Error cargando propiedades:', propsError);
-        setDbError(`propiedades: ${propsError.message}`);
+        setDbError(`code: ${propsError.code} | message: ${propsError.message} | details: ${propsError.details} | hint: ${propsError.hint}`);
         setLoading(false);
         return;
       }
 
       if (!props || props.length === 0) {
         console.error('[SectionPisos] La tabla propiedades devolvió 0 filas');
-        setDbError('La tabla propiedades está vacía o sin permisos de lectura');
+        setDbError('Sin datos — code: (none) | La query no devolvió filas. RLS puede estar bloqueando o la tabla está vacía.');
         setLoading(false);
         return;
       }

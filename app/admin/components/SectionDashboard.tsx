@@ -8,6 +8,8 @@ interface DashData {
   unidades: number;
   ocupadas: number;
   alertas: AlertaRow[];
+  ingresosMes: { importe: number }[];
+  incidenciasAbiertas: number;
 }
 
 interface AlertaRow {
@@ -44,21 +46,27 @@ export default function SectionDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const mesActual = new Date().toISOString().slice(0, 7);
+
   useEffect(() => {
     async function load() {
       try {
         const sb = createClient();
-        const [r1, r2, r3, r4] = await Promise.all([
+        const [r1, r2, r3, r4, r5, r6] = await Promise.all([
           sb.from('propiedades').select('*', { count: 'exact', head: true }),
           sb.from('unidades').select('*', { count: 'exact', head: true }),
           sb.from('unidades').select('*', { count: 'exact', head: true }).eq('estado', 'OCUPADA'),
           sb.from('v_alertas').select('*').limit(5),
+          sb.from('pagos').select('importe').eq('estado', 'PAGADO').eq('mes_facturado', mesActual),
+          sb.from('incidencias').select('*', { count: 'exact', head: true }).in('estado', ['ABIERTA', 'EN_PROCESO']),
         ]);
         setData({
           propiedades: r1.count ?? 0,
           unidades: r2.count ?? 0,
           ocupadas: r3.count ?? 0,
           alertas: (r4.data ?? []) as AlertaRow[],
+          ingresosMes: (r5.data ?? []) as { importe: number }[],
+          incidenciasAbiertas: r6.count ?? 0,
         });
       } catch (e) {
         setError(String(e));
@@ -86,8 +94,10 @@ export default function SectionDashboard() {
     </div>
   );
 
-  const altasCount = data?.alertas.filter((a: AlertaRow) => a.prioridad === 'alta').length ?? 2;
+  const altasCount = data?.incidenciasAbiertas ?? 0;
   const ocpPct = data && data.unidades ? Math.round((data.ocupadas / data.unidades) * 100) : 0;
+  const totalIngresos = (data?.ingresosMes?.reduce((sum: number, p: { importe: number }) => sum + (p.importe || 0), 0) || 0);
+  const ingresosLabel = totalIngresos >= 1000 ? `${(totalIngresos / 1000).toFixed(1)}k€` : `${totalIngresos}€`;
 
   const pisoOcup = [
     { name: 'Sants 10', pct: 80, total: 6, ocp: 5 },
@@ -135,8 +145,8 @@ export default function SectionDashboard() {
       <div className="dash-grid-4" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
         <KpiCard label="Propiedades" value={data?.propiedades ?? 3} color={C.b} icon="🏘️" sub="pisos activos" />
         <KpiCard label="Habs ocupadas" value={`${data?.ocupadas ?? 9}/${data?.unidades ?? 15}`} color={C.g} icon="🛏️" sub={`${ocpPct || 75}% ocupación`} />
-        <KpiCard label="Ingresos est." value="4.2k€" color={C.y} icon="💰" sub="mes en curso" />
-        <KpiCard label="Incidencias altas" value={altasCount || 2} color={C.r} icon="⚠️" sub="requieren atención" />
+        <KpiCard label="Ingresos est." value={ingresosLabel} color={C.y} icon="💰" sub="mes en curso" />
+        <KpiCard label="Incidencias abiertas" value={altasCount} color={C.r} icon="⚠️" sub="requieren atención" />
       </div>
 
       <div className="dash-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>

@@ -66,7 +66,7 @@ export default function SectionFinanzas() {
           sb.from('pagos').select('importe, fecha_vencimiento, estado'),
           sb.from('gastos').select('importe, fecha, concepto'),
           sb.from('pagos').select(
-            'id, importe, estado, inquilinos(nombre, habitaciones(numero, propiedades(nombre)))'
+            'id, importe, fecha_vencimiento, fecha_pago, estado, mes_facturado, estancias(inquilinos(nombre, apellidos), unidades(nombre, propiedades(nombre)))'
           ).order('fecha_vencimiento', { ascending: false }).limit(15),
         ]);
 
@@ -106,23 +106,30 @@ export default function SectionFinanzas() {
         type PagoRaw = {
           id: string;
           importe: string | number;
+          fecha_vencimiento: string;
+          fecha_pago: string | null;
           estado: string;
-          inquilinos: {
-            nombre: string;
-            habitaciones: {
-              numero: string;
+          mes_facturado: string | null;
+          estancias: {
+            inquilinos: { nombre: string; apellidos: string | null } | null;
+            unidades: {
+              nombre: string;
               propiedades: { nombre: string } | null;
             } | null;
           } | null;
         };
-        const detData: PagoDetalle[] = ((pagosDetRes.data ?? []) as unknown as PagoRaw[]).map(p => ({
-          id: p.id,
-          inquilino: p.inquilinos?.nombre ?? '—',
-          habitacion: p.inquilinos?.habitaciones?.numero ?? '—',
-          propiedad: p.inquilinos?.habitaciones?.propiedades?.nombre ?? '—',
-          importe: Number(p.importe),
-          estado: p.estado,
-        }));
+        const detData: PagoDetalle[] = ((pagosDetRes.data ?? []) as unknown as PagoRaw[]).map(p => {
+          const inq = p.estancias?.inquilinos;
+          const nombreCompleto = inq ? [inq.nombre, inq.apellidos].filter(Boolean).join(' ') : '—';
+          return {
+            id: p.id,
+            inquilino: nombreCompleto,
+            habitacion: p.estancias?.unidades?.nombre ?? '—',
+            propiedad: p.estancias?.unidades?.propiedades?.nombre ?? '—',
+            importe: Number(p.importe),
+            estado: p.estado,
+          };
+        });
 
         setMeses(mesesData);
         setBreakdown(breakdownData);
@@ -172,7 +179,7 @@ export default function SectionFinanzas() {
         <div style={card}>
           <div style={cardHead}>📅 P&L Mensual</div>
           <div style={cardBody}>
-            {meses.map((m, i) => (
+            {meses.map((m: MesData, i: number) => (
               <div
                 key={m.mes_key}
                 onClick={() => setSelectedMes(i)}
@@ -200,8 +207,8 @@ export default function SectionFinanzas() {
         <div style={card}>
           <div style={cardHead}>🔍 Desglose gastos</div>
           <div style={cardBody}>
-            {breakdown.map((g, i) => {
-              const total = breakdown.reduce((a, x) => a + x.val, 0);
+            {breakdown.map((g: GastoCategoria, i: number) => {
+              const total = breakdown.reduce((a: number, x: GastoCategoria) => a + x.val, 0);
               const pct = total > 0 ? Math.round((g.val / total) * 100) : 0;
               return (
                 <div key={i} style={{ marginBottom: 12 }}>
@@ -231,7 +238,7 @@ export default function SectionFinanzas() {
               </tr>
             </thead>
             <tbody>
-              {pagosDetalle.map((row) => (
+              {pagosDetalle.map((row: PagoDetalle) => (
                 <tr key={row.id} style={{ borderBottom: `1px solid ${C.g1}` }}>
                   <td style={{ padding: '9px 14px', color: C.g9 }}>{row.propiedad}</td>
                   <td style={{ padding: '9px 14px', fontWeight: 700, color: C.b }}>{row.habitacion}</td>

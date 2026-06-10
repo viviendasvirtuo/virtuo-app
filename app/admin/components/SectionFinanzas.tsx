@@ -64,7 +64,7 @@ export default function SectionFinanzas() {
 
         const [pagosRes, gastosRes, pagosDetRes] = await Promise.all([
           sb.from('pagos').select('importe, fecha_vencimiento, estado'),
-          sb.from('gastos').select('importe, fecha, concepto'),
+          sb.from('gastos').select('importe, fecha_pago, mes, concepto'),
           sb.from('pagos').select(
             'id, importe, fecha_vencimiento, fecha_pago, estado, mes_facturado, estancias(inquilinos(nombre, apellidos), unidades(nombre, propiedades(nombre)))'
           ).order('fecha_vencimiento', { ascending: false }).limit(15),
@@ -80,7 +80,7 @@ export default function SectionFinanzas() {
         }
         const gastMap: Record<string, number> = {};
         for (const g of (gastosRes.data ?? [])) {
-          const key = (g as { fecha: string }).fecha.substring(0, 7);
+          const key = (g as { fecha_pago: string }).fecha_pago.substring(0, 7);
           gastMap[key] = (gastMap[key] ?? 0) + Number((g as { importe: string }).importe);
         }
         const allMonths = [...new Set([...Object.keys(ingMap), ...Object.keys(gastMap)])].sort().reverse();

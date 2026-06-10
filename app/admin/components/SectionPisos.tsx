@@ -37,6 +37,10 @@ export default function SectionPisos() {
 
   useEffect(() => {
     async function load() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const env = (globalThis as any).process?.env ?? {};
+      console.log('SUPABASE URL:', env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log('ANON KEY exists:', !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
       const sb = createClient();
 
       // Paso 1: cargar propiedades

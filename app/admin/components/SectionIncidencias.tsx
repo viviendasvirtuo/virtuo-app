@@ -5,12 +5,13 @@ import { C, card, pill } from './tokens';
 
 interface IncidenciaRow {
   id: string;
-  titulo: string;
+  tipo: string;
   descripcion: string | null;
   prioridad: string;
   estado: string;
-  created_at: string;
-  habitacion_numero: string | null;
+  fecha_reporte: string;
+  sla_horas: number | null;
+  unidad_nombre: string | null;
   propiedad_nombre: string | null;
 }
 
@@ -26,9 +27,10 @@ function priorityPill(p: string): { bg: string; color: string } {
   return pill('g');
 }
 
-function isSlaVencido(createdAt: string): boolean {
-  const diffHours = (Date.now() - new Date(createdAt).getTime()) / 3_600_000;
-  return diffHours > 48;
+function isSlaVencido(fechaReporte: string, slaHoras: number | null): boolean {
+  const limite = slaHoras ?? 48;
+  const diffHours = (Date.now() - new Date(fechaReporte).getTime()) / 3_600_000;
+  return diffHours > limite;
 }
 
 export default function SectionIncidencias() {
@@ -40,28 +42,30 @@ export default function SectionIncidencias() {
       const sb = createClient();
       const { data: rows, error } = await sb
         .from('incidencias')
-        .select('id, titulo, descripcion, prioridad, estado, created_at, habitaciones(numero), propiedades(nombre)')
-        .order('created_at', { ascending: false });
+        .select('id, tipo, descripcion, prioridad, estado, fecha_reporte, sla_horas, unidades(nombre), propiedades(nombre)')
+        .order('fecha_reporte', { ascending: false });
 
       if (!error && rows) {
         setData(
           (rows as unknown as Array<{
             id: string;
-            titulo: string;
+            tipo: string;
             descripcion: string | null;
             prioridad: string;
             estado: string;
-            created_at: string;
-            habitaciones: { numero: string } | null;
+            fecha_reporte: string;
+            sla_horas: number | null;
+            unidades: { nombre: string } | null;
             propiedades: { nombre: string } | null;
           }>).map(r => ({
             id: r.id,
-            titulo: r.titulo,
+            tipo: r.tipo,
             descripcion: r.descripcion,
             prioridad: r.prioridad,
             estado: r.estado,
-            created_at: r.created_at,
-            habitacion_numero: r.habitaciones?.numero ?? null,
+            fecha_reporte: r.fecha_reporte,
+            sla_horas: r.sla_horas,
+            unidad_nombre: r.unidades?.nombre ?? null,
             propiedad_nombre: r.propiedades?.nombre ?? null,
           }))
         );
@@ -71,10 +75,10 @@ export default function SectionIncidencias() {
     load();
   }, []);
 
-  const altas = data.filter(i => i.prioridad === 'alta').length;
-  const medias = data.filter(i => i.prioridad === 'media').length;
-  const resueltas = data.filter(i => i.estado === 'resuelta').length;
-  const slaVencidas = data.filter(i => i.estado !== 'resuelta' && isSlaVencido(i.created_at)).length;
+  const altas = data.filter((i: IncidenciaRow) => i.prioridad === 'alta').length;
+  const medias = data.filter((i: IncidenciaRow) => i.prioridad === 'media').length;
+  const resueltas = data.filter((i: IncidenciaRow) => i.estado === 'resuelta').length;
+  const slaVencidas = data.filter((i: IncidenciaRow) => i.estado !== 'resuelta' && isSlaVencido(i.fecha_reporte, i.sla_horas)).length;
 
   if (loading) return (
     <div>
@@ -104,12 +108,12 @@ export default function SectionIncidencias() {
       </div>
 
       <div>
-        {data.map((inc) => {
+        {data.map((inc: IncidenciaRow) => {
           const pStyle = priorityPill(inc.prioridad);
           const borderColor = priorityColor(inc.prioridad);
           const isResuelta = inc.estado === 'resuelta';
-          const vencido = !isResuelta && isSlaVencido(inc.created_at);
-          const fecha = new Date(inc.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+          const vencido = !isResuelta && isSlaVencido(inc.fecha_reporte, inc.sla_horas);
+          const fecha = new Date(inc.fecha_reporte).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 
           return (
             <div key={inc.id} style={{ ...card, borderLeft: `4px solid ${borderColor}` }}>
@@ -130,13 +134,13 @@ export default function SectionIncidencias() {
                     )}
                   </div>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: C.g9, marginBottom: 4 }}>{inc.titulo}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: C.g9, marginBottom: 4 }}>{inc.tipo}</div>
                 {inc.descripcion && (
                   <div style={{ fontSize: 12.5, color: C.g5, marginBottom: 8 }}>{inc.descripcion}</div>
                 )}
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 11, color: C.g5 }}>
                   {inc.propiedad_nombre && <span>🏠 {inc.propiedad_nombre}</span>}
-                  {inc.habitacion_numero && <span>🚪 {inc.habitacion_numero}</span>}
+                  {inc.unidad_nombre && <span>🚪 {inc.unidad_nombre}</span>}
                   <span>📅 {fecha}</span>
                 </div>
               </div>

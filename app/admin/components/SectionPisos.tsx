@@ -64,7 +64,7 @@ export default function SectionPisos() {
       const result: Propiedad[] = [];
       for (const [idx, p] of (props as PropiedadRaw[]).entries()) {
         const { data: habs, error: habsError } = await sb
-          .from('habitaciones')
+          .from('unidades')
           .select('*')
           .eq('propiedad_id', p.id)
           .order('numero');

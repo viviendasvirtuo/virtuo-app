@@ -6,7 +6,7 @@ import { C, card } from './tokens';
 
 interface Habitacion {
   id: string;
-  numero: string;
+  nombre: string;
   estado: string;
   precio_mensual: number;
 }
@@ -67,7 +67,7 @@ export default function SectionPisos() {
           .from('unidades')
           .select('*')
           .eq('propiedad_id', p.id)
-          .order('numero');
+          .order('nombre');
 
         if (habsError) {
           console.error(`[SectionPisos] Error cargando habitaciones de ${p.nombre}:`, habsError);
@@ -172,7 +172,7 @@ export default function SectionPisos() {
                       color: h.estado === 'ocupada' ? C.b : C.g5,
                       border: `1px solid ${h.estado === 'ocupada' ? C.b : C.bd}`,
                       borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600,
-                    }}>{h.numero}</span>
+                    }}>{h.nombre}</span>
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>

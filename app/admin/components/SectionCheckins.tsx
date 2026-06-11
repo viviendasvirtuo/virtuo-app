@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { C, card } from './tokens';
 
@@ -40,6 +40,24 @@ interface EstanciaForm {
   dia_pago: string;
   tipo_contrato: string;
 }
+
+interface UpsellForm {
+  pack: 'ninguno' | 'basic' | 'premium' | 'vip';
+  fee_activacion: boolean;
+  late_checkout: boolean;
+  upgrade_colchon: boolean;
+  limpieza_quincenal: boolean;
+  parking: boolean;
+}
+
+const EMPTY_UPSELL: UpsellForm = {
+  pack: 'ninguno',
+  fee_activacion: false,
+  late_checkout: false,
+  upgrade_colchon: false,
+  limpieza_quincenal: false,
+  parking: false,
+};
 
 const EMPTY_FORM: EstanciaForm = {
   inquilino_id: '',
@@ -97,11 +115,15 @@ function EstanciaModal({
   onSaved: () => void;
 }) {
   const [form, setForm] = useState<EstanciaForm>(EMPTY_FORM);
+  const [upsell, setUpsell] = useState<UpsellForm>(EMPTY_UPSELL);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
   function set(k: keyof EstanciaForm, v: string) {
     setForm((f: EstanciaForm) => ({ ...f, [k]: v }));
+  }
+  function setU(k: keyof UpsellForm, v: boolean | string) {
+    setUpsell((u: UpsellForm) => ({ ...u, [k]: v }));
   }
 
   async function handleSave() {
@@ -132,6 +154,38 @@ function EstanciaModal({
 
     if (form.estado === 'ACTIVA' && form.unidad_id) {
       await sb.from('unidades').update({ estado: 'OCUPADA' }).eq('id', form.unidad_id);
+    }
+
+    // Insert upsells
+    const now = new Date().toISOString();
+    const upsells: { id: string; estancia_id: string; tipo: string; descripcion: string; precio: number; estado: string; fecha_solicitud: string }[] = [];
+    const ts = Date.now();
+    if (upsell.pack !== 'ninguno') {
+      const packMap = {
+        basic:   { precio: 350, descripcion: 'Pack Basic · Muebles + TV + WiFi 1GB + Mant. 24/7' },
+        premium: { precio: 550, descripcion: 'Pack Premium · Todo Basic + Netflix + Coffee Room + Limpieza' },
+        vip:     { precio: 650, descripcion: 'Pack VIP · Todo Premium + Gym + Lavandería + Limpieza Hab. Semanal' },
+      };
+      const p = packMap[upsell.pack];
+      upsells.push({ id: `UPS_${ts}_pack_${upsell.pack}`, estancia_id: id, tipo: `pack_${upsell.pack}`, descripcion: p.descripcion, precio: p.precio, estado: 'ACTIVO', fecha_solicitud: now });
+    }
+    if (upsell.fee_activacion) {
+      upsells.push({ id: `UPS_${ts}_fee_activacion`, estancia_id: id, tipo: 'fee_activacion', descripcion: 'Fee Activación · Onboarding + Kit Welcome + Limpieza Final + Soporte VIP', precio: 250, estado: 'PENDIENTE', fecha_solicitud: now });
+    }
+    if (upsell.late_checkout) {
+      upsells.push({ id: `UPS_${ts}_late_checkout`, estancia_id: id, tipo: 'late_checkout', descripcion: 'Late Check-out / Early Check-in', precio: 50, estado: 'PENDIENTE', fecha_solicitud: now });
+    }
+    if (upsell.upgrade_colchon) {
+      upsells.push({ id: `UPS_${ts}_upgrade_colchon`, estancia_id: id, tipo: 'upgrade_colchon', descripcion: 'Upgrade Colchón Viscoelástico', precio: 50, estado: 'PENDIENTE', fecha_solicitud: now });
+    }
+    if (upsell.limpieza_quincenal) {
+      upsells.push({ id: `UPS_${ts}_limpieza_quincenal`, estancia_id: id, tipo: 'limpieza_quincenal', descripcion: 'Limpieza Quincenal +80€/mes', precio: 80, estado: 'PENDIENTE', fecha_solicitud: now });
+    }
+    if (upsell.parking) {
+      upsells.push({ id: `UPS_${ts}_parking`, estancia_id: id, tipo: 'parking', descripcion: 'Plaza Parking +120€/mes', precio: 120, estado: 'PENDIENTE', fecha_solicitud: now });
+    }
+    if (upsells.length > 0) {
+      await sb.from('upsells').insert(upsells);
     }
 
     setSaving(false);
@@ -204,6 +258,53 @@ function EstanciaModal({
             <div>
               <label style={lbl}>Día de pago</label>
               <input style={inp} type="number" min="1" max="31" value={form.dia_pago} onChange={(e: { target: { value: string } }) => set('dia_pago', e.target.value)} placeholder="1" />
+            </div>
+          </div>
+
+          {/* Servicios y Packs */}
+          <div style={{ background: '#F0F4FF', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1E4DB7', marginBottom: 2 }}>⭐ Servicios y Packs</div>
+
+            <div>
+              <label style={lbl}>Pack mensual</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {([
+                  ['ninguno', 'Sin pack mensual'],
+                  ['basic', 'Pack Basic +350€/mes · Muebles + TV + WiFi 1GB + Mant. 24/7'],
+                  ['premium', 'Pack Premium +550€/mes · Todo Basic + Netflix + Coffee Room + Limpieza'],
+                  ['vip', 'Pack VIP +650€/mes · Todo Premium + Gym + Lavandería + Limpieza Hab. Semanal'],
+                ] as [string, string][]).map(([val, label]) => (
+                  <label key={val} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#374151', cursor: 'pointer', fontWeight: upsell.pack === val ? 600 : 400 }}>
+                    <input type="radio" name="pack" value={val} checked={upsell.pack === val} onChange={() => setU('pack', val)} style={{ marginTop: 2, flexShrink: 0 }} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label style={lbl}>Fee de activación</label>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#374151', cursor: 'pointer', fontWeight: upsell.fee_activacion ? 600 : 400 }}>
+                <input type="checkbox" checked={upsell.fee_activacion} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setU('fee_activacion', e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+                Fee Activación 250€ único · Onboarding + Kit Welcome + Limpieza Final + Soporte VIP
+              </label>
+            </div>
+
+            <div>
+              <label style={lbl}>Servicios extra</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {([
+                  ['late_checkout', 'Late Check-out / Early Check-in 50€ único'],
+                  ['upgrade_colchon', 'Upgrade Colchón Viscoelástico 50€ único'],
+                  ['limpieza_quincenal', 'Limpieza Quincenal +80€/mes'],
+                  ['parking', 'Plaza Parking +120€/mes'],
+                ] as [keyof UpsellForm, string][]).map(([key, label]) => (
+                  <label key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#374151', cursor: 'pointer', fontWeight: upsell[key] ? 600 : 400 }}>
+                    <input type="checkbox" checked={upsell[key] as boolean} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setU(key, e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+                    {label}
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
 

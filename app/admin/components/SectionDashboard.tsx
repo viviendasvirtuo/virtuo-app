@@ -10,6 +10,9 @@ interface DashData {
   alertas: AlertaRow[];
   ingresosMes: { importe: number }[];
   incidenciasAbiertas: number;
+  ocupacionPisos: OcupacionPiso[];
+  actividadReciente: PagoActividad[];
+  incidenciasRecientes: IncidenciaReciente[];
 }
 
 interface AlertaRow {
@@ -17,6 +20,35 @@ interface AlertaRow {
   mensaje?: string;
   prioridad?: string;
   tipo?: string;
+}
+
+interface UnidadSimple { id: string; estado: string; nombre: string; }
+interface OcupacionPiso {
+  id: string;
+  nombre: string;
+  unidades: UnidadSimple[];
+}
+
+interface InquilinoNombre { nombre: string; }
+interface UnidadNombre { nombre: string; }
+interface EstanciaConJoin { inquilinos: InquilinoNombre | null; unidades: UnidadNombre | null; }
+interface PagoActividad {
+  id: string;
+  concepto: string;
+  importe: number;
+  estado: string;
+  fecha_pago: string | null;
+  estancias: EstanciaConJoin | null;
+}
+
+interface PropiedadNombre { nombre: string; }
+interface IncidenciaReciente {
+  id: string;
+  tipo: string;
+  prioridad: string;
+  estado: string;
+  fecha_reporte: string;
+  propiedades: PropiedadNombre | null;
 }
 
 function Skeleton({ h = 80 }: { h?: number }) {
@@ -52,13 +84,16 @@ export default function SectionDashboard() {
     async function load() {
       try {
         const sb = createClient();
-        const [r1, r2, r3, r4, r5, r6] = await Promise.all([
+        const [r1, r2, r3, r4, r5, r6, r7, r8, r9] = await Promise.all([
           sb.from('propiedades').select('*', { count: 'exact', head: true }),
           sb.from('unidades').select('*', { count: 'exact', head: true }),
           sb.from('unidades').select('*', { count: 'exact', head: true }).eq('estado', 'OCUPADA'),
           sb.from('v_alertas').select('*').limit(5),
           sb.from('pagos').select('importe').eq('estado', 'PAGADO').eq('mes_facturado', mesActual),
           sb.from('incidencias').select('*', { count: 'exact', head: true }).in('estado', ['ABIERTA', 'EN_PROCESO']),
+          sb.from('propiedades').select('id, nombre, unidades(id, estado, nombre)'),
+          sb.from('pagos').select('id, concepto, importe, estado, fecha_pago, estancias(inquilinos(nombre), unidades(nombre))').order('fecha_pago', { ascending: false }).limit(5),
+          sb.from('incidencias').select('id, tipo, prioridad, estado, fecha_reporte, propiedades(nombre)').eq('estado', 'ABIERTA').order('fecha_reporte', { ascending: false }).limit(3),
         ]);
         setData({
           propiedades: r1.count ?? 0,
@@ -67,6 +102,9 @@ export default function SectionDashboard() {
           alertas: (r4.data ?? []) as AlertaRow[],
           ingresosMes: (r5.data ?? []) as { importe: number }[],
           incidenciasAbiertas: r6.count ?? 0,
+          ocupacionPisos: (r7.data ?? []) as unknown as OcupacionPiso[],
+          actividadReciente: (r8.data ?? []) as unknown as PagoActividad[],
+          incidenciasRecientes: (r9.data ?? []) as unknown as IncidenciaReciente[],
         });
       } catch (e) {
         setError(String(e));
@@ -99,18 +137,18 @@ export default function SectionDashboard() {
   const totalIngresos = (data?.ingresosMes?.reduce((sum: number, p: { importe: number }) => sum + (p.importe || 0), 0) || 0);
   const ingresosLabel = totalIngresos >= 1000 ? `${(totalIngresos / 1000).toFixed(1)}k€` : `${totalIngresos}€`;
 
-  const pisoOcup = [
-    { name: 'Sants 10', pct: 80, total: 6, ocp: 5 },
-    { name: 'Bulevar Pirineus', pct: 70, total: 5, ocp: 4 },
-    { name: 'Plaza de Palau', pct: 0, total: 4, ocp: 0 },
-  ];
+  const ocupacionPisos = (data?.ocupacionPisos ?? []).map(p => {
+    const total = p.unidades.length;
+    const ocp = p.unidades.filter(u => u.estado === 'OCUPADA').length;
+    const pct = total > 0 ? Math.round((ocp / total) * 100) : 0;
+    return { name: p.nombre, total, ocp, pct };
+  });
 
-  const actividad = [
-    { icon: '✅', text: 'Alejandro F. — Contrato firmado', time: 'hace 2h' },
-    { icon: '⚠️', text: 'INC_20260415_001 — Avería caldera', time: 'hace 5h' },
-    { icon: '📧', text: 'Email bienvenida WEL_02 enviado', time: 'ayer' },
-    { icon: '💰', text: 'Transferencia recibida · Sants HAB3', time: 'ayer' },
-  ];
+  function formatFechaPago(fecha: string | null): string {
+    if (!fecha) return '';
+    const d = new Date(fecha);
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+  }
 
   const makeScenarios = [
     { name: 'Esc. A · Captación', status: '✅ OK', ok: true },
@@ -153,14 +191,17 @@ export default function SectionDashboard() {
         <div style={card}>
           <div style={cardHead}>🏘️ Estado de ocupación</div>
           <div style={cardBody}>
-            {pisoOcup.map(p => (
+            {ocupacionPisos.length === 0 && (
+              <div style={{ fontSize: 12.5, color: C.g5, textAlign: 'center', padding: '12px 0' }}>Sin datos de propiedades</div>
+            )}
+            {ocupacionPisos.map(p => (
               <div key={p.name} style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 13, fontWeight: 600, color: C.g9 }}>
                   <span>{p.name}</span>
                   <span style={{ color: C.g5 }}>{p.ocp}/{p.total} habs · {p.pct}%</span>
                 </div>
                 <div style={{ height: 7, background: C.g1, borderRadius: 4 }}>
-                  <div style={{ height: '100%', width: `${p.pct}%`, background: p.pct >= 75 ? C.g : p.pct > 0 ? C.y : C.r, borderRadius: 4, transition: 'width .4s' }} />
+                  <div style={{ height: '100%', width: `${p.pct}%`, background: p.pct >= 80 ? C.g : p.pct >= 50 ? C.y : C.r, borderRadius: 4, transition: 'width .4s' }} />
                 </div>
               </div>
             ))}
@@ -170,13 +211,37 @@ export default function SectionDashboard() {
         <div style={card}>
           <div style={cardHead}>⚡ Actividad reciente</div>
           <div style={cardBody}>
-            {actividad.map((a, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < actividad.length - 1 ? `1px solid ${C.g1}` : 'none', alignItems: 'center' }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{a.icon}</span>
-                <div style={{ flex: 1, fontSize: 12.5, color: C.g9, fontWeight: 500 }}>{a.text}</div>
-                <span style={{ fontSize: 11, color: C.g5, whiteSpace: 'nowrap' }}>{a.time}</span>
-              </div>
-            ))}
+            {(data?.actividadReciente ?? []).length > 0 ? (
+              (data?.actividadReciente ?? []).map((p, i) => {
+                const arr = data?.actividadReciente ?? [];
+                const nombre = p.estancias?.inquilinos?.nombre ?? '—';
+                const hab = p.estancias?.unidades?.nombre ?? '';
+                const texto = `${nombre}${hab ? ' · ' + hab : ''} — ${p.concepto}`;
+                return (
+                  <div key={p.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < arr.length - 1 ? `1px solid ${C.g1}` : 'none', alignItems: 'center' }}>
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>💰</span>
+                    <div style={{ flex: 1, fontSize: 12.5, color: C.g9, fontWeight: 500 }}>{texto}</div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: C.g9 }}>{p.importe}€</div>
+                      <div style={{ fontSize: 11, color: C.g5 }}>{formatFechaPago(p.fecha_pago)}</div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (data?.incidenciasRecientes ?? []).length > 0 ? (
+              (data?.incidenciasRecientes ?? []).map((inc, i) => {
+                const arr = data?.incidenciasRecientes ?? [];
+                return (
+                  <div key={inc.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < arr.length - 1 ? `1px solid ${C.g1}` : 'none', alignItems: 'center' }}>
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+                    <div style={{ flex: 1, fontSize: 12.5, color: C.g9, fontWeight: 500 }}>{inc.propiedades?.nombre ?? '—'} — {inc.tipo}</div>
+                    <span style={{ fontSize: 11, color: C.g5, whiteSpace: 'nowrap' }}>{formatFechaPago(inc.fecha_reporte)}</span>
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ fontSize: 12.5, color: C.g5, textAlign: 'center', padding: '12px 0' }}>Sin actividad reciente</div>
+            )}
           </div>
         </div>
       </div>

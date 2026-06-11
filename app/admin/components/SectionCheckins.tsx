@@ -196,7 +196,7 @@ function EstanciaModal({
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
         <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1E4DB7' }}>🏠 Nueva estancia</h2>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1E4DB7' }}>🏠 Nueva reserva</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
         </div>
         <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -383,7 +383,7 @@ export default function SectionCheckins() {
           onClick={() => setModalOpen(true)}
           style={{ padding: '8px 18px', background: '#1E4DB7', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
         >
-          + Nueva Estancia
+          + Nueva Reserva
         </button>
       </div>
 
@@ -449,7 +449,7 @@ export default function SectionCheckins() {
                                 disabled={checkingIn === est.id}
                                 style={{ background: '#D1FAE5', border: 'none', borderRadius: 7, padding: '3px 10px', fontSize: 11, fontWeight: 700, color: '#27AE60', cursor: 'pointer' }}
                               >
-                                {checkingIn === est.id ? '…' : '✓ Check-in'}
+                                {checkingIn === est.id ? '…' : 'Confirmar entrada'}
                               </button>
                             )
                           }

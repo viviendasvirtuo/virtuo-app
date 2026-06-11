@@ -18,24 +18,24 @@ const groups: NavGroup[] = [
   {
     title: 'Principal',
     items: [
-      { key: 'dashboard', label: 'Dashboard', icon: '📊' },
+      { key: 'dashboard', label: 'Inicio', icon: '📊' },
       { key: 'pisos', label: 'Mis Pisos', icon: '🏘️', badge: 3 },
-      { key: 'ocupacion', label: 'Ocupación & KPIs', icon: '📈', isNew: true },
+      { key: 'ocupacion', label: 'Ocupación', icon: '📈', isNew: true },
     ],
   },
   {
     title: 'Inquilinos',
     items: [
-      { key: 'pipeline', label: 'Pipeline CRM', icon: '🎯', isNew: true },
-      { key: 'matching', label: 'Matching G1-G10', icon: '🤝', isNew: true },
-      { key: 'checkins', label: 'Check-ins / Outs', icon: '🔑' },
+      { key: 'pipeline', label: 'Captación', icon: '🎯', isNew: true },
+      { key: 'matching', label: 'Compatibilidad', icon: '🤝', isNew: true },
+      { key: 'checkins', label: 'Reservas', icon: '🔑' },
       { key: 'incidencias', label: 'Incidencias', icon: '⚠️', badge: 2 },
     ],
   },
   {
     title: 'Operativa',
     items: [
-      { key: 'finanzas', label: 'Finanzas · P&L', icon: '💰' },
+      { key: 'finanzas', label: 'Finanzas', icon: '💰' },
       { key: 'proveedores', label: 'Proveedores', icon: '🔧' },
       { key: 'comunidad', label: 'Comunidad', icon: '👥', isNew: true },
     ],
@@ -43,17 +43,17 @@ const groups: NavGroup[] = [
   {
     title: 'Sistema',
     items: [
-      { key: 'make', label: 'Make · A–E', icon: '⚡' },
-      { key: 'calendly', label: 'Calendly', icon: '📅' },
-      { key: 'registro', label: 'SOP16', icon: '📝', badge: 17 },
-      { key: 'sops', label: 'SOPs 1–16', icon: '📖' },
+      { key: 'make', label: 'Automatizaciones', icon: '⚡' },
+      { key: 'calendly', label: 'Agenda', icon: '📅' },
+      { key: 'registro', label: 'Protocolo', icon: '📝', badge: 17 },
+      { key: 'sops', label: 'Guías operativas', icon: '📖' },
       { key: 'plantillas', label: 'Plantillas', icon: '💬', badge: 36 },
     ],
   },
   {
     title: 'Herramientas',
     items: [
-      { key: 'calculadora', label: 'Calculadora ROI', icon: '🧮' },
+      { key: 'calculadora', label: 'Calculadora', icon: '🧮' },
       { key: 'simulador', label: 'Simulador', icon: '🔄' },
     ],
   },

@@ -198,7 +198,12 @@ function IncidenciaModal({
             </div>
             <div>
               <label style={lbl}>SLA (horas)</label>
-              <input style={inp} type="number" min="1" value={form.sla_horas} onChange={(e: { target: { value: string } }) => set('sla_horas', e.target.value)} placeholder="48" />
+              <select style={inp} value={form.sla_horas} onChange={(e: { target: { value: string } }) => set('sla_horas', e.target.value)}>
+                <option value="24">24h · Urgente</option>
+                <option value="48">48h · Estándar</option>
+                <option value="72">72h · Normal</option>
+                <option value="168">1 semana</option>
+              </select>
             </div>
             <div>
               <label style={lbl}>Coste estimado (€)</label>

@@ -1,126 +1,379 @@
 'use client';
-import { useState } from 'react';
-import { C, card, cardHead, cardBody } from './tokens';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { C, card } from './tokens';
 
-const CHECKIN_ITEMS = [
-  'Entrega 2 copias de llaves',
-  'Fotos habitación firmadas',
-  'Inventario CHK_11 completado',
-  'Alta WhatsApp del piso',
-  'HUM_27 bienvenida enviado',
-  'Fianza recibida y registrada',
-];
+interface Estancia {
+  id: string;
+  estado: string | null;
+  fecha_entrada: string | null;
+  fecha_salida_prevista: string | null;
+  renta_mensual: number | null;
+  fianza: number | null;
+  unidad_id: string | null;
+  inquilino_id: string | null;
+  checkin_completado: boolean | null;
+  checkout_completado: boolean | null;
+}
 
-const CHECKOUT_ITEMS = [
-  'Aviso 30 días antes · CIE_22',
-  'Recogida de llaves',
-  'Fotos comparativas check-in/out',
-  'Revisión inventario',
-  'Devolución fianza si OK',
-  'FDB_24 · Encuesta feedback',
-];
+interface Inquilino {
+  id: string;
+  nombre: string;
+  apellidos: string | null;
+}
 
-const MOVIMIENTOS = [
-  { tipo: 'CHECK-IN', icon: '🔑', hab: 'HAB5 · Sants 10', inquilino: 'Alejandro F.', fecha: '22 May 2026', color: C.g },
-  { tipo: 'CHECK-OUT', icon: '🚪', hab: 'HAB3 · Pirineus', inquilino: 'Carlos R.', fecha: '31 May 2026', color: C.r },
-  { tipo: 'CHECK-IN', icon: '🔑', hab: 'HAB2 · Palau', inquilino: 'Por asignar', fecha: '01 Jun 2026', color: C.g },
-];
+interface Unidad {
+  id: string;
+  nombre: string;
+  propiedad_id: string | null;
+  propiedades: { nombre: string } | null;
+}
+
+interface EstanciaForm {
+  inquilino_id: string;
+  unidad_id: string;
+  estado: string;
+  fecha_entrada: string;
+  fecha_salida_prevista: string;
+  renta_mensual: string;
+  fianza: string;
+  dia_pago: string;
+  tipo_contrato: string;
+}
+
+const EMPTY_FORM: EstanciaForm = {
+  inquilino_id: '',
+  unidad_id: '',
+  estado: 'RESERVA',
+  fecha_entrada: '',
+  fecha_salida_prevista: '',
+  renta_mensual: '',
+  fianza: '',
+  dia_pago: '1',
+  tipo_contrato: 'coliving',
+};
+
+const inp = {
+  width: '100%',
+  padding: '9px 12px',
+  border: '1.5px solid #E2E6EF',
+  borderRadius: 8,
+  fontSize: 13,
+  outline: 'none',
+  boxSizing: 'border-box' as const,
+  fontFamily: "'Plus Jakarta Sans', sans-serif",
+};
+
+const lbl = {
+  display: 'block',
+  fontSize: 11,
+  fontWeight: 600,
+  color: '#374151',
+  marginBottom: 4,
+};
+
+const ESTADO_STYLE: Record<string, { bg: string; color: string }> = {
+  ACTIVA:     { bg: '#D1FAE5', color: '#27AE60' },
+  RESERVA:    { bg: '#FEF3C7', color: '#F59E0B' },
+  CONTRATO:   { bg: '#DBEAFE', color: '#1E4DB7' },
+  FINALIZADA: { bg: '#F3F4F6', color: '#6B7280' },
+  CANCELADA:  { bg: '#FEE2E2', color: '#EF4444' },
+};
+
+function fmt(d: string | null): string {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' });
+}
+
+function EstanciaModal({
+  inquilinos,
+  unidades,
+  onClose,
+  onSaved,
+}: {
+  inquilinos: Inquilino[];
+  unidades: Unidad[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState<EstanciaForm>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  function set(k: keyof EstanciaForm, v: string) {
+    setForm((f: EstanciaForm) => ({ ...f, [k]: v }));
+  }
+
+  async function handleSave() {
+    if (!form.fecha_entrada) { setErr('La fecha de entrada es obligatoria.'); return; }
+    if (!form.renta_mensual) { setErr('La renta mensual es obligatoria.'); return; }
+    setSaving(true);
+    setErr('');
+    const sb = createClient();
+
+    const id = 'EST_' + Date.now().toString().slice(-8);
+    const payload = {
+      id,
+      inquilino_id: form.inquilino_id || null,
+      unidad_id: form.unidad_id || null,
+      estado: form.estado,
+      fecha_entrada: form.fecha_entrada,
+      fecha_salida_prevista: form.fecha_salida_prevista || null,
+      renta_mensual: Number(form.renta_mensual),
+      fianza: form.fianza ? Number(form.fianza) : null,
+      dia_pago: form.dia_pago ? Number(form.dia_pago) : 1,
+      tipo_contrato: form.tipo_contrato,
+      checkin_completado: false,
+      checkout_completado: false,
+    };
+
+    const { error } = await sb.from('estancias').insert(payload);
+    if (error) { setErr(error.message); setSaving(false); return; }
+
+    if (form.estado === 'ACTIVA' && form.unidad_id) {
+      await sb.from('unidades').update({ estado: 'OCUPADA' }).eq('id', form.unidad_id);
+    }
+
+    setSaving(false);
+    onSaved();
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
+        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1E4DB7' }}>🏠 Nueva estancia</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={lbl}>Inquilino</label>
+              <select style={inp} value={form.inquilino_id} onChange={(e: { target: { value: string } }) => set('inquilino_id', e.target.value)}>
+                <option value="">— Sin asignar —</option>
+                {inquilinos.map((inq: Inquilino) => (
+                  <option key={inq.id} value={inq.id}>
+                    {inq.nombre}{inq.apellidos ? ' ' + inq.apellidos : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={lbl}>Habitación</label>
+              <select style={inp} value={form.unidad_id} onChange={(e: { target: { value: string } }) => set('unidad_id', e.target.value)}>
+                <option value="">— Sin asignar —</option>
+                {unidades.map((u: Unidad) => (
+                  <option key={u.id} value={u.id}>
+                    {u.propiedades?.nombre ? u.propiedades.nombre + ' · ' : ''}{u.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Estado</label>
+              <select style={inp} value={form.estado} onChange={(e: { target: { value: string } }) => set('estado', e.target.value)}>
+                <option value="RESERVA">RESERVA</option>
+                <option value="CONTRATO">CONTRATO</option>
+                <option value="ACTIVA">ACTIVA</option>
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Tipo contrato</label>
+              <select style={inp} value={form.tipo_contrato} onChange={(e: { target: { value: string } }) => set('tipo_contrato', e.target.value)}>
+                <option value="coliving">Coliving</option>
+                <option value="LAU">LAU</option>
+                <option value="temporal">Temporal</option>
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Fecha entrada *</label>
+              <input style={inp} type="date" value={form.fecha_entrada} onChange={(e: { target: { value: string } }) => set('fecha_entrada', e.target.value)} />
+            </div>
+            <div>
+              <label style={lbl}>Salida prevista</label>
+              <input style={inp} type="date" value={form.fecha_salida_prevista} onChange={(e: { target: { value: string } }) => set('fecha_salida_prevista', e.target.value)} />
+            </div>
+            <div>
+              <label style={lbl}>Renta mensual (€) *</label>
+              <input style={inp} type="number" min="0" value={form.renta_mensual} onChange={(e: { target: { value: string } }) => set('renta_mensual', e.target.value)} placeholder="850" />
+            </div>
+            <div>
+              <label style={lbl}>Fianza (€)</label>
+              <input style={inp} type="number" min="0" value={form.fianza} onChange={(e: { target: { value: string } }) => set('fianza', e.target.value)} placeholder="850" />
+            </div>
+            <div>
+              <label style={lbl}>Día de pago</label>
+              <input style={inp} type="number" min="1" max="31" value={form.dia_pago} onChange={(e: { target: { value: string } }) => set('dia_pago', e.target.value)} placeholder="1" />
+            </div>
+          </div>
+
+          {err && <p style={{ margin: 0, color: '#EF4444', fontSize: 12, background: '#FEF2F2', padding: '8px 12px', borderRadius: 8 }}>{err}</p>}
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'white', border: '1.5px solid #E2E6EF', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B7280' }}>
+              Cancelar
+            </button>
+            <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '11px', background: '#1E4DB7', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              {saving ? 'Guardando...' : 'Crear estancia'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SectionCheckins() {
-  const [checkinDone, setCheckinDone] = useState<boolean[]>(new Array(CHECKIN_ITEMS.length).fill(false));
-  const [checkoutDone, setCheckoutDone] = useState<boolean[]>(new Array(CHECKOUT_ITEMS.length).fill(false));
+  const [estancias, setEstancias] = useState<Estancia[]>([]);
+  const [inquilinos, setInquilinos] = useState<Inquilino[]>([]);
+  const [unidades, setUnidades] = useState<Unidad[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [checkingIn, setCheckingIn] = useState<string | null>(null);
 
-  const toggleIn = (i: number) => setCheckinDone((prev: boolean[]) => prev.map((v: boolean, j: number) => j === i ? !v : v));
-  const toggleOut = (i: number) => setCheckoutDone((prev: boolean[]) => prev.map((v: boolean, j: number) => j === i ? !v : v));
+  const inqMap: Record<string, Inquilino> = {};
+  for (const inq of inquilinos) inqMap[inq.id] = inq;
+  const unidadMap: Record<string, Unidad> = {};
+  for (const u of unidades) unidadMap[u.id] = u;
 
-  const inDone = checkinDone.filter(Boolean).length;
-  const outDone = checkoutDone.filter(Boolean).length;
+  async function load() {
+    setLoading(true);
+    const sb = createClient();
+
+    const [estRes, inqRes, uniRes] = await Promise.all([
+      sb.from('estancias')
+        .select('id, estado, fecha_entrada, fecha_salida_prevista, renta_mensual, fianza, unidad_id, inquilino_id, checkin_completado, checkout_completado')
+        .order('fecha_entrada', { ascending: false }),
+      sb.from('inquilinos')
+        .select('id, nombre, apellidos')
+        .order('nombre'),
+      sb.from('unidades')
+        .select('id, nombre, propiedad_id, propiedades(nombre)')
+        .or('estado.eq.LIBRE,estado.eq.OCUPADA')
+        .order('nombre'),
+    ]);
+
+    if (estRes.error) { setDbError(estRes.error.message); setLoading(false); return; }
+
+    setEstancias((estRes.data ?? []) as Estancia[]);
+    setInquilinos((inqRes.data ?? []) as Inquilino[]);
+    setUnidades((uniRes.data ?? []) as unknown as Unidad[]);
+    setDbError(null);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleCheckin(id: string) {
+    setCheckingIn(id);
+    const sb = createClient();
+    await sb.from('estancias').update({ checkin_completado: true }).eq('id', id);
+    setCheckingIn(null);
+    load();
+  }
 
   return (
     <div>
-      <style>{`@media(max-width:700px){.chk-grid{grid-template-columns:1fr!important}}`}</style>
-      <div className="chk-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <div style={card}>
-          <div style={cardHead}>
-            🔑 Checklist Check-in
-            <span style={{ background: inDone === CHECKIN_ITEMS.length ? C.gl : C.yl, color: inDone === CHECKIN_ITEMS.length ? C.g : C.y, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 7 }}>{inDone}/{CHECKIN_ITEMS.length}</span>
-          </div>
-          <div style={cardBody}>
-            <div style={{ height: 4, background: C.g1, borderRadius: 3, marginBottom: 14 }}>
-              <div style={{ height: '100%', width: `${(inDone / CHECKIN_ITEMS.length) * 100}%`, background: C.g, borderRadius: 3, transition: 'width .3s' }} />
-            </div>
-            {CHECKIN_ITEMS.map((item, i) => (
-              <div
-                key={i}
-                onClick={() => toggleIn(i)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: i < CHECKIN_ITEMS.length - 1 ? `1px solid ${C.g1}` : 'none', cursor: 'pointer' }}
-              >
-                <div style={{
-                  width: 18, height: 18, borderRadius: 4, border: `2px solid ${checkinDone[i] ? C.g : C.bd}`,
-                  background: checkinDone[i] ? C.g : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  {checkinDone[i] && <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>✓</span>}
-                </div>
-                <span style={{ fontSize: 13, color: checkinDone[i] ? C.g5 : C.g9, textDecoration: checkinDone[i] ? 'line-through' : 'none' }}>{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <style>{`@media(max-width:700px){.chk-tbl th:nth-child(3),.chk-tbl td:nth-child(3),.chk-tbl th:nth-child(4),.chk-tbl td:nth-child(4){display:none}}`}</style>
 
-        <div style={card}>
-          <div style={cardHead}>
-            🚪 Checklist Check-out
-            <span style={{ background: outDone === CHECKOUT_ITEMS.length ? C.gl : C.yl, color: outDone === CHECKOUT_ITEMS.length ? C.g : C.y, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 7 }}>{outDone}/{CHECKOUT_ITEMS.length}</span>
-          </div>
-          <div style={cardBody}>
-            <div style={{ height: 4, background: C.g1, borderRadius: 3, marginBottom: 14 }}>
-              <div style={{ height: '100%', width: `${(outDone / CHECKOUT_ITEMS.length) * 100}%`, background: C.r, borderRadius: 3, transition: 'width .3s' }} />
-            </div>
-            {CHECKOUT_ITEMS.map((item, i) => (
-              <div
-                key={i}
-                onClick={() => toggleOut(i)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: i < CHECKOUT_ITEMS.length - 1 ? `1px solid ${C.g1}` : 'none', cursor: 'pointer' }}
-              >
-                <div style={{
-                  width: 18, height: 18, borderRadius: 4, border: `2px solid ${checkoutDone[i] ? C.r : C.bd}`,
-                  background: checkoutDone[i] ? C.r : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                  {checkoutDone[i] && <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>✓</span>}
-                </div>
-                <span style={{ fontSize: 13, color: checkoutDone[i] ? C.g5 : C.g9, textDecoration: checkoutDone[i] ? 'line-through' : 'none' }}>{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+        <button
+          onClick={() => setModalOpen(true)}
+          style={{ padding: '8px 18px', background: '#1E4DB7', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+        >
+          + Nueva Estancia
+        </button>
       </div>
 
       <div style={card}>
-        <div style={cardHead}>📅 Próximos movimientos</div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: C.g0 }}>
-                {['Tipo', 'Habitación', 'Inquilino', 'Fecha'].map(h => (
-                  <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: C.g5, fontWeight: 600, borderBottom: `1px solid ${C.bd}` }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {MOVIMIENTOS.map((m, i) => (
-                <tr key={i} style={{ borderBottom: `1px solid ${C.g1}` }}>
-                  <td style={{ padding: '9px 14px' }}>
-                    <span style={{ background: m.tipo === 'CHECK-IN' ? C.gl : C.rl, color: m.color, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 7 }}>{m.icon} {m.tipo}</span>
-                  </td>
-                  <td style={{ padding: '9px 14px', fontWeight: 600, color: C.g9 }}>{m.hab}</td>
-                  <td style={{ padding: '9px 14px', color: C.g5 }}>{m.inquilino}</td>
-                  <td style={{ padding: '9px 14px', fontFamily: "'Fraunces', serif", fontWeight: 700, color: C.g9 }}>{m.fecha}</td>
+        {loading && <div style={{ padding: 24, color: C.g5, fontSize: 14 }}>Cargando estancias…</div>}
+
+        {!loading && dbError && (
+          <div style={{ padding: '16px 20px', color: '#EF4444', fontSize: 13, background: '#FEF2F2', borderRadius: 10, margin: 16 }}>
+            Error: {dbError}
+          </div>
+        )}
+
+        {!loading && !dbError && (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="chk-tbl" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#F0F4FF' }}>
+                  {['Inquilino', 'Habitación', 'Entrada', 'Salida prevista', 'Renta', 'Estado', 'Check-in', 'Acciones'].map(h => (
+                    <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#1E4DB7', fontWeight: 700, fontSize: 11, borderBottom: '2px solid #E2E6EF', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {estancias.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ padding: '24px 12px', color: C.g5, textAlign: 'center', fontSize: 13 }}>
+                      No hay estancias registradas.
+                    </td>
+                  </tr>
+                ) : (
+                  estancias.map((est: Estancia, i: number) => {
+                    const inq = est.inquilino_id ? inqMap[est.inquilino_id] : null;
+                    const uni = est.unidad_id ? unidadMap[est.unidad_id] : null;
+                    const estStyle = ESTADO_STYLE[est.estado ?? ''] ?? { bg: '#F3F4F6', color: '#6B7280' };
+
+                    return (
+                      <tr key={est.id} style={{ background: i % 2 === 0 ? 'white' : '#F8FAFF', borderBottom: '1px solid #F0F0F0' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827' }}>
+                          {inq ? `${inq.nombre}${inq.apellidos ? ' ' + inq.apellidos : ''}` : <span style={{ color: C.g5 }}>—</span>}
+                        </td>
+                        <td style={{ padding: '10px 12px', color: C.g5 }}>
+                          {uni
+                            ? <span>{uni.propiedades?.nombre ? <span style={{ color: C.g5 }}>{uni.propiedades.nombre} · </span> : null}<strong style={{ color: '#111827' }}>{uni.nombre}</strong></span>
+                            : est.unidad_id ?? <span style={{ color: C.g5 }}>—</span>
+                          }
+                        </td>
+                        <td style={{ padding: '10px 12px', color: '#111827' }}>{fmt(est.fecha_entrada)}</td>
+                        <td style={{ padding: '10px 12px', color: C.g5 }}>{fmt(est.fecha_salida_prevista)}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 700, color: '#111827' }}>
+                          {est.renta_mensual != null ? est.renta_mensual.toLocaleString() + '€' : '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{ background: estStyle.bg, color: estStyle.color, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6 }}>
+                            {est.estado ?? '—'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          {est.checkin_completado
+                            ? <span style={{ color: '#27AE60', fontWeight: 700, fontSize: 16 }}>✓</span>
+                            : (
+                              <button
+                                onClick={() => handleCheckin(est.id)}
+                                disabled={checkingIn === est.id}
+                                style={{ background: '#D1FAE5', border: 'none', borderRadius: 7, padding: '3px 10px', fontSize: 11, fontWeight: 700, color: '#27AE60', cursor: 'pointer' }}
+                              >
+                                {checkingIn === est.id ? '…' : '✓ Check-in'}
+                              </button>
+                            )
+                          }
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{ fontSize: 11, color: C.g5 }}>{est.id}</span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {modalOpen && (
+        <EstanciaModal
+          inquilinos={inquilinos}
+          unidades={unidades}
+          onClose={() => setModalOpen(false)}
+          onSaved={() => { setModalOpen(false); load(); }}
+        />
+      )}
     </div>
   );
 }

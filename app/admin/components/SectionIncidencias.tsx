@@ -275,7 +275,7 @@ export default function SectionIncidencias() {
       );
     }
     if (!propRes.error) setPropiedades((propRes.data ?? []) as PropiedadSimple[]);
-    if (!uniRes.error) setUnidades((uniRes.data ?? []) as UnidadSimple[]);
+    if (!uniRes.error) setUnidades((uniRes.data ?? []) as unknown as UnidadSimple[]);
     setLoading(false);
   }
 

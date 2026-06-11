@@ -50,14 +50,14 @@ const EMPTY_FORM: FormData = {
 const GRUPOS = [
   'G1 · Estudiante internacional / Erasmus / máster',
   'G2 · Nómada digital / freelance / creativo tech',
-  'G3 · Directivo / manager / consultor senior',
-  'G4 · Artista / creativo / músico / fotógrafo / diseñador',
+  'G3 · Cocinero / hostelería / camarero',
+  'G4 · Operario / técnico / instalador / fábrica',
   'G5 · Profesional joven (ingeniero, consultor, residente sanitario)',
   'G6 · Sanitario desplazado (enfermero, médico temporal)',
-  'G7 · Operario / técnico / instalador / fábrica',
-  'G8 · Cocinero / hostelería / camarero',
-  'G9 · Senior / ejecutivo internacional',
-  'G10 · Otro perfil',
+  'G7 · Artista / creativo / músico / fotógrafo / diseñador',
+  'G8 · Directivo / manager / consultor senior',
+  'G9 · Recién llegado / buscando trabajo',
+  'G10 · Jubilado / pensionista con ingresos estables',
 ];
 
 const inp = {

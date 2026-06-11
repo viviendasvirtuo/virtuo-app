@@ -169,6 +169,7 @@ function IncidenciaModal({
                 {propiedades.map((p: PropiedadSimple) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
               </select>
             </div>
+            {form.propiedad_id && (
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={lbl}>Habitación</label>
               <select style={inp} value={form.unidad_id} onChange={(e: { target: { value: string } }) => set('unidad_id', e.target.value)}>
@@ -176,6 +177,7 @@ function IncidenciaModal({
                 {unidadesFiltradas.map((u: UnidadSimple) => <option key={u.id} value={u.id}>{u.propiedades?.nombre ? u.propiedades.nombre + ' · ' + u.nombre : u.nombre}</option>)}
               </select>
             </div>
+            )}
             <div>
               <label style={lbl}>Tipo</label>
               <select style={inp} value={form.tipo} onChange={(e: { target: { value: string } }) => set('tipo', e.target.value)}>

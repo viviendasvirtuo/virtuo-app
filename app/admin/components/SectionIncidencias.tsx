@@ -19,7 +19,7 @@ interface IncidenciaRow {
 }
 
 interface PropiedadSimple { id: string; nombre: string; }
-interface UnidadSimple   { id: string; nombre: string; propiedad_id: string | null; }
+interface UnidadSimple   { id: string; nombre: string; propiedad_id: string | null; propiedades?: { nombre: string } | null; }
 
 interface IncForm {
   propiedad_id: string;
@@ -173,7 +173,7 @@ function IncidenciaModal({
               <label style={lbl}>Habitación</label>
               <select style={inp} value={form.unidad_id} onChange={(e: { target: { value: string } }) => set('unidad_id', e.target.value)}>
                 <option value="">— Todas / zona común —</option>
-                {unidadesFiltradas.map((u: UnidadSimple) => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+                {unidadesFiltradas.map((u: UnidadSimple) => <option key={u.id} value={u.id}>{u.propiedades?.nombre ? u.propiedades.nombre + ' · ' + u.nombre : u.nombre}</option>)}
               </select>
             </div>
             <div>
@@ -253,7 +253,7 @@ export default function SectionIncidencias() {
         .select('id, tipo, descripcion, prioridad, estado, fecha_reporte, sla_horas, coste, unidad_id, propiedad_id, unidades(nombre), propiedades(nombre)')
         .order('fecha_reporte', { ascending: false }),
       sb.from('propiedades').select('id, nombre').order('nombre'),
-      sb.from('unidades').select('id, nombre, propiedad_id').order('nombre'),
+      sb.from('unidades').select('id, nombre, propiedad_id, propiedades(nombre)').order('nombre'),
     ]);
 
     if (!incRes.error && incRes.data) {

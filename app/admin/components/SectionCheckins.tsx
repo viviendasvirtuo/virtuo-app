@@ -180,9 +180,9 @@ function EstanciaModal({
             <div>
               <label style={lbl}>Tipo contrato</label>
               <select style={inp} value={form.tipo_contrato} onChange={(e: { target: { value: string } }) => set('tipo_contrato', e.target.value)}>
-                <option value="coliving">Coliving</option>
-                <option value="LAU">LAU</option>
-                <option value="temporal">Temporal</option>
+                <option value="coliving">Coliving · Código Civil</option>
+                <option value="temporal">Temporal · Media estancia</option>
+                <option value="turistico">Turístico · HUTB Barcelona</option>
               </select>
             </div>
             <div>

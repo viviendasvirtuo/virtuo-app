@@ -9,6 +9,173 @@ interface Habitacion {
   nombre: string;
   estado: string;
   precio_mensual: number;
+  tipo?: string | null;
+  precio_base?: number | null;
+  precio_actual?: number | null;
+  metros2?: number | null;
+  tiene_banyo_privado?: boolean | null;
+  tiene_balcon?: boolean | null;
+}
+
+interface UnidadForm {
+  nombre: string;
+  tipo: string;
+  estado: string;
+  precio_base: string;
+  precio_actual: string;
+  metros2: string;
+  tiene_banyo_privado: boolean;
+  tiene_balcon: boolean;
+}
+
+const EMPTY_UNIDAD: UnidadForm = {
+  nombre: '',
+  tipo: 'habitacion',
+  estado: 'LIBRE',
+  precio_base: '',
+  precio_actual: '',
+  metros2: '',
+  tiene_banyo_privado: false,
+  tiene_balcon: false,
+};
+
+function generateUnitId(propiedadId: string, nombre: string): string {
+  const part = propiedadId.split('_')[1] ?? propiedadId.substring(0, 6);
+  return 'UNIT_' + part + '_' + nombre.toUpperCase().replace(/\s/g, '_');
+}
+
+function UnidadModal({
+  propiedadId,
+  editData,
+  onClose,
+  onSaved,
+}: {
+  propiedadId: string;
+  editData: (Habitacion & { _isEdit: boolean }) | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const isEdit = editData?._isEdit ?? false;
+  const [form, setForm] = useState<UnidadForm>(
+    isEdit && editData
+      ? {
+          nombre: editData.nombre ?? '',
+          tipo: editData.tipo ?? 'habitacion',
+          estado: editData.estado ?? 'LIBRE',
+          precio_base: editData.precio_base != null ? String(editData.precio_base) : '',
+          precio_actual: editData.precio_actual != null ? String(editData.precio_actual) : '',
+          metros2: editData.metros2 != null ? String(editData.metros2) : '',
+          tiene_banyo_privado: editData.tiene_banyo_privado ?? false,
+          tiene_balcon: editData.tiene_balcon ?? false,
+        }
+      : EMPTY_UNIDAD
+  );
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  function setF(k: keyof UnidadForm, v: string | boolean) {
+    setForm((f: UnidadForm) => ({ ...f, [k]: v }));
+  }
+
+  async function handleSave() {
+    if (!form.nombre.trim()) { setErr('El nombre es obligatorio.'); return; }
+    setSaving(true);
+    setErr('');
+    const sb = createClient();
+
+    const payload = {
+      nombre: form.nombre.trim(),
+      tipo: form.tipo,
+      estado: form.estado,
+      precio_base: form.precio_base ? Number(form.precio_base) : null,
+      precio_actual: form.precio_actual ? Number(form.precio_actual) : null,
+      metros2: form.metros2 ? Number(form.metros2) : null,
+      tiene_banyo_privado: form.tiene_banyo_privado,
+      tiene_balcon: form.tiene_balcon,
+    };
+
+    if (isEdit && editData) {
+      const { error } = await sb.from('unidades').update(payload).eq('id', editData.id);
+      if (error) { setErr(error.message); setSaving(false); return; }
+    } else {
+      const id = generateUnitId(propiedadId, form.nombre);
+      const { error } = await sb.from('unidades').insert({ id, propiedad_id: propiedadId, ...payload });
+      if (error) { setErr(error.message); setSaving(false); return; }
+    }
+
+    setSaving(false);
+    onSaved();
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
+        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1E4DB7' }}>
+            {isEdit ? '✏️ Editar habitación' : '🛏️ Nueva habitación'}
+          </h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={lbl}>Nombre *</label>
+              <input style={inp} value={form.nombre} onChange={(e: { target: { value: string } }) => setF('nombre', e.target.value)} placeholder="HAB1" />
+            </div>
+            <div>
+              <label style={lbl}>Tipo</label>
+              <select style={inp} value={form.tipo} onChange={(e: { target: { value: string } }) => setF('tipo', e.target.value)}>
+                <option value="habitacion">Habitación</option>
+                <option value="estudio">Estudio</option>
+                <option value="loft">Loft</option>
+                <option value="cama">Cama</option>
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Estado</label>
+              <select style={inp} value={form.estado} onChange={(e: { target: { value: string } }) => setF('estado', e.target.value)}>
+                <option value="LIBRE">LIBRE</option>
+                <option value="OCUPADA">OCUPADA</option>
+                <option value="RESERVADA">RESERVADA</option>
+                <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Metros²</label>
+              <input style={inp} type="number" min="0" value={form.metros2} onChange={(e: { target: { value: string } }) => setF('metros2', e.target.value)} placeholder="12" />
+            </div>
+            <div>
+              <label style={lbl}>Precio base (€)</label>
+              <input style={inp} type="number" min="0" value={form.precio_base} onChange={(e: { target: { value: string } }) => setF('precio_base', e.target.value)} placeholder="850" />
+            </div>
+            <div>
+              <label style={lbl}>Precio actual (€)</label>
+              <input style={inp} type="number" min="0" value={form.precio_actual} onChange={(e: { target: { value: string } }) => setF('precio_actual', e.target.value)} placeholder="850" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 16 }}>
+              <input type="checkbox" id="banyo" checked={form.tiene_banyo_privado} onChange={(e: { target: { checked: boolean } }) => setF('tiene_banyo_privado', e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+              <label htmlFor="banyo" style={{ fontSize: 13, color: '#374151', cursor: 'pointer' }}>Baño privado</label>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 16 }}>
+              <input type="checkbox" id="balcon" checked={form.tiene_balcon} onChange={(e: { target: { checked: boolean } }) => setF('tiene_balcon', e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+              <label htmlFor="balcon" style={{ fontSize: 13, color: '#374151', cursor: 'pointer' }}>Balcón</label>
+            </div>
+          </div>
+
+          {err && <p style={{ margin: 0, color: '#EF4444', fontSize: 12, background: '#FEF2F2', padding: '8px 12px', borderRadius: 8 }}>{err}</p>}
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'white', border: '1.5px solid #E2E6EF', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B7280' }}>
+              Cancelar
+            </button>
+            <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '11px', background: '#1E4DB7', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              {saving ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface Propiedad {
@@ -252,6 +419,7 @@ export default function SectionPisos() {
   const [dbError, setDbError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<(PropiedadRaw & { _isEdit: boolean }) | null>(null);
+  const [unidadModal, setUnidadModal] = useState<{ propiedadId: string; editData: (Habitacion & { _isEdit: boolean }) | null } | null>(null);
 
   async function load() {
     setLoading(true);
@@ -320,6 +488,11 @@ export default function SectionPisos() {
   function handleSaved() {
     setModalOpen(false);
     setEditTarget(null);
+    load();
+  }
+
+  function handleUnidadSaved() {
+    setUnidadModal(null);
     load();
   }
 
@@ -420,15 +593,24 @@ export default function SectionPisos() {
                   <div style={{ height: 6, background: C.g1, borderRadius: 4, marginBottom: 12 }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 4 }} />
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                     {habs.map((h: Habitacion) => (
-                      <span key={h.id} style={{
-                        background: h.estado === 'ocupada' ? C.bl : C.g1,
-                        color: h.estado === 'ocupada' ? C.b : C.g5,
-                        border: `1px solid ${h.estado === 'ocupada' ? C.b : C.bd}`,
-                        borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600,
-                      }}>{h.nombre}</span>
+                      <span
+                        key={h.id}
+                        onClick={() => setUnidadModal({ propiedadId: p.id, editData: { ...h, _isEdit: true } })}
+                        style={{
+                          background: h.estado === 'ocupada' ? C.bl : C.g1,
+                          color: h.estado === 'ocupada' ? C.b : C.g5,
+                          border: `1px solid ${h.estado === 'ocupada' ? C.b : C.bd}`,
+                          borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >{h.nombre}</span>
                     ))}
+                    <button
+                      onClick={() => setUnidadModal({ propiedadId: p.id, editData: null })}
+                      style={{ background: '#F0F4FF', border: '1px dashed #1E4DB7', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 700, color: '#1E4DB7', cursor: 'pointer' }}
+                    >+ Hab</button>
                   </div>
                   <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
                     <span style={{ background: C.g1, color: C.g5, borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 600 }}>🏠 Cohousing</span>
@@ -442,6 +624,14 @@ export default function SectionPisos() {
       )}
 
       {modalOpen && <PropiedadModal editData={editTarget} onClose={() => setModalOpen(false)} onSaved={handleSaved} />}
+      {unidadModal && (
+        <UnidadModal
+          propiedadId={unidadModal.propiedadId}
+          editData={unidadModal.editData}
+          onClose={() => setUnidadModal(null)}
+          onSaved={handleUnidadSaved}
+        />
+      )}
     </div>
   );
 }

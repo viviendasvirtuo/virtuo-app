@@ -257,7 +257,11 @@ function EstanciaModal({
             </div>
             <div>
               <label style={lbl}>Día de pago</label>
-              <input style={inp} type="number" min="1" max="31" value={form.dia_pago} onChange={(e: { target: { value: string } }) => set('dia_pago', e.target.value)} placeholder="1" />
+              <select style={inp} value={form.dia_pago} onChange={(e: { target: { value: string } }) => set('dia_pago', e.target.value)}>
+                {Array.from({ length: 28 }, (_, i) => i + 1).map(d => (
+                  <option key={d} value={d}>Día {d}</option>
+                ))}
+              </select>
             </div>
           </div>
 

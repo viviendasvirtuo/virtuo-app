@@ -73,7 +73,7 @@ export default function SectionFinanzas() {
         // P&L por mes
         const ingMap: Record<string, number> = {};
         for (const p of (pagosRes.data ?? [])) {
-          if ((p as { estado: string }).estado === 'pagado') {
+          if ((p as { estado: string }).estado === 'PAGADO') {
             const key = (p as { fecha_vencimiento: string }).fecha_vencimiento.substring(0, 7);
             ingMap[key] = (ingMap[key] ?? 0) + Number((p as { importe: string }).importe);
           }

@@ -40,7 +40,7 @@ const EMPTY_FORM: FormData = {
   email: '',
   telefono: '',
   dni_nie: '',
-  grupo: 'G1 Estudiante',
+  grupo: 'G1 · Estudiante internacional / Erasmus / máster',
   ocupacion: '',
   ingresos_mensuales: '',
   score_inquilino: '10',
@@ -48,9 +48,16 @@ const EMPTY_FORM: FormData = {
 };
 
 const GRUPOS = [
-  'G1 Estudiante', 'G2 Joven profesional', 'G3 Profesional',
-  'G4 Pareja', 'G5 Expatriado', 'G6 Nómada digital',
-  'G7 Investigador', 'G8 Temporal', 'G9 Senior', 'G10 Jubilado',
+  'G1 · Estudiante internacional / Erasmus / máster',
+  'G2 · Nómada digital / freelance / creativo tech',
+  'G3 · Directivo / manager / consultor senior',
+  'G4 · Artista / creativo / músico / fotógrafo / diseñador',
+  'G5 · Profesional joven (ingeniero, consultor, residente sanitario)',
+  'G6 · Sanitario desplazado (enfermero, médico temporal)',
+  'G7 · Operario / técnico / instalador / fábrica',
+  'G8 · Cocinero / hostelería / camarero',
+  'G9 · Senior / ejecutivo internacional',
+  'G10 · Otro perfil',
 ];
 
 const inp = {

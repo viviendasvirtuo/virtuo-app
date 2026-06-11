@@ -1,4 +1,6 @@
 'use client';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { C } from './tokens';
 
 interface NavItem {
@@ -14,51 +16,6 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const groups: NavGroup[] = [
-  {
-    title: 'Principal',
-    items: [
-      { key: 'dashboard', label: 'Inicio', icon: '📊' },
-      { key: 'pisos', label: 'Mis Pisos', icon: '🏘️', badge: 3 },
-      { key: 'ocupacion', label: 'Ocupación', icon: '📈', isNew: true },
-    ],
-  },
-  {
-    title: 'Inquilinos',
-    items: [
-      { key: 'pipeline', label: 'Captación', icon: '🎯', isNew: true },
-      { key: 'matching', label: 'Compatibilidad', icon: '🤝', isNew: true },
-      { key: 'checkins', label: 'Reservas', icon: '🔑' },
-      { key: 'incidencias', label: 'Incidencias', icon: '⚠️', badge: 2 },
-    ],
-  },
-  {
-    title: 'Operativa',
-    items: [
-      { key: 'finanzas', label: 'Finanzas', icon: '💰' },
-      { key: 'proveedores', label: 'Proveedores', icon: '🔧' },
-      { key: 'comunidad', label: 'Comunidad', icon: '👥', isNew: true },
-    ],
-  },
-  {
-    title: 'Sistema',
-    items: [
-      { key: 'make', label: 'Automatizaciones', icon: '⚡' },
-      { key: 'calendly', label: 'Agenda', icon: '📅' },
-      { key: 'registro', label: 'Protocolo', icon: '📝', badge: 17 },
-      { key: 'sops', label: 'Guías operativas', icon: '📖' },
-      { key: 'plantillas', label: 'Plantillas', icon: '💬', badge: 36 },
-    ],
-  },
-  {
-    title: 'Herramientas',
-    items: [
-      { key: 'calculadora', label: 'Calculadora', icon: '🧮' },
-      { key: 'simulador', label: 'Simulador', icon: '🔄' },
-    ],
-  },
-];
-
 interface SidebarProps {
   active: string;
   onNavigate: (s: string) => void;
@@ -66,6 +23,67 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ active, onNavigate, menuOpen }: SidebarProps) {
+  const [pisosCount, setPisosCount] = useState(0);
+  const [incidenciasCount, setIncidenciasCount] = useState(0);
+
+  useEffect(() => {
+    async function load() {
+      const sb = createClient();
+      const [r1, r2] = await Promise.all([
+        sb.from('propiedades').select('*', { count: 'exact', head: true }),
+        sb.from('incidencias').select('*', { count: 'exact', head: true }).in('estado', ['ABIERTA', 'EN_PROCESO']),
+      ]);
+      setPisosCount(r1.count ?? 0);
+      setIncidenciasCount(r2.count ?? 0);
+    }
+    load();
+  }, []);
+
+  const groups: NavGroup[] = [
+    {
+      title: 'Principal',
+      items: [
+        { key: 'dashboard', label: 'Inicio', icon: '📊' },
+        { key: 'pisos', label: 'Mis Pisos', icon: '🏘️', badge: pisosCount },
+        { key: 'ocupacion', label: 'Ocupación', icon: '📈', isNew: true },
+      ],
+    },
+    {
+      title: 'Inquilinos',
+      items: [
+        { key: 'pipeline', label: 'Captación', icon: '🎯', isNew: true },
+        { key: 'matching', label: 'Compatibilidad', icon: '🤝', isNew: true },
+        { key: 'checkins', label: 'Reservas', icon: '🔑' },
+        { key: 'incidencias', label: 'Incidencias', icon: '⚠️', badge: incidenciasCount },
+      ],
+    },
+    {
+      title: 'Operativa',
+      items: [
+        { key: 'finanzas', label: 'Finanzas', icon: '💰' },
+        { key: 'proveedores', label: 'Proveedores', icon: '🔧' },
+        { key: 'comunidad', label: 'Comunidad', icon: '👥', isNew: true },
+      ],
+    },
+    {
+      title: 'Sistema',
+      items: [
+        { key: 'make', label: 'Automatizaciones', icon: '⚡' },
+        { key: 'calendly', label: 'Agenda', icon: '📅' },
+        { key: 'registro', label: 'Protocolo', icon: '📝' },
+        { key: 'sops', label: 'Guías operativas', icon: '📖' },
+        { key: 'plantillas', label: 'Plantillas', icon: '💬' },
+      ],
+    },
+    {
+      title: 'Herramientas',
+      items: [
+        { key: 'calculadora', label: 'Calculadora', icon: '🧮' },
+        { key: 'simulador', label: 'Simulador', icon: '🔄' },
+      ],
+    },
+  ];
+
   return (
     <>
       <style>{`

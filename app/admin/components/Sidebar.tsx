@@ -145,17 +145,6 @@ export default function Sidebar({ active, onNavigate, menuOpen }: SidebarProps) 
                 >
                   <span style={{ fontSize: 14 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
-                  {item.isNew && (
-                    <span style={{
-                      background: '#27AE60',
-                      color: '#fff',
-                      fontSize: 9,
-                      fontWeight: 700,
-                      padding: '2px 6px',
-                      borderRadius: 8,
-                      letterSpacing: '.04em',
-                    }}>NEW</span>
-                  )}
                   {item.badge !== undefined && (
                     <span style={{
                       background: active === item.key ? C.bl : 'rgba(255,255,255,.22)',

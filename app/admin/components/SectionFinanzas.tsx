@@ -80,7 +80,10 @@ export default function SectionFinanzas() {
         }
         const gastMap: Record<string, number> = {};
         for (const g of (gastosRes.data ?? [])) {
-          const key = (g as { fecha_pago: string }).fecha_pago.substring(0, 7);
+          const key = (g as { mes: string; fecha_pago: string }).mes
+            || (g as { mes: string; fecha_pago: string }).fecha_pago?.substring(0, 7)
+            || '';
+          if (!key) continue;
           gastMap[key] = (gastMap[key] ?? 0) + Number((g as { importe: string }).importe);
         }
         const allMonths = [...new Set([...Object.keys(ingMap), ...Object.keys(gastMap)])].sort().reverse();

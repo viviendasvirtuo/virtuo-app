@@ -261,6 +261,13 @@ export default function SectionProveedores() {
 
   useEffect(() => { load(); }, []);
 
+  async function eliminarProveedor(id: string) {
+    if (!confirm('¿Seguro que quieres eliminar este proveedor?')) return;
+    const sb = createClient();
+    await sb.from('proveedores').delete().eq('id', id);
+    await load();
+  }
+
   function openEdit(p: Proveedor) {
     setEditTarget({ ...p, _isEdit: true });
     setModalOpen(true);
@@ -339,6 +346,15 @@ export default function SectionProveedores() {
                       style={{ background: '#F0F4FF', border: 'none', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1E4DB7', cursor: 'pointer' }}
                     >
                       ✏️ Editar
+                    </button>
+                    <button
+                      onClick={() => eliminarProveedor(p.id)}
+                      title="Eliminar"
+                      style={{ background: '#F3F4F6', color: '#6B7280', border: 'none', borderRadius: 6, width: 28, height: 28, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = '#FEE2E2'; el.style.color = '#EF4444'; }}
+                      onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = '#F3F4F6'; el.style.color = '#6B7280'; }}
+                    >
+                      ✕
                     </button>
                   </div>
                 </div>

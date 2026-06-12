@@ -373,6 +373,95 @@ function EstanciaModal({
   );
 }
 
+interface BajaForm {
+  fecha_salida_real: string;
+  checkout_completado: boolean;
+  fianza_devuelta: boolean;
+  fianza_devuelta_fecha: string;
+}
+
+function BajaModal({
+  estancia,
+  onClose,
+  onSaved,
+}: {
+  estancia: Estancia;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [form, setForm] = useState<BajaForm>({
+    fecha_salida_real: today,
+    checkout_completado: false,
+    fianza_devuelta: false,
+    fianza_devuelta_fecha: today,
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const canConfirm = form.fianza_devuelta && !!form.fianza_devuelta_fecha;
+
+  async function handleConfirmar() {
+    setSaving(true);
+    setErr('');
+    const sb = createClient();
+    const { error } = await sb.from('estancias').update({
+      estado: 'FINALIZADA',
+      fecha_salida_real: form.fecha_salida_real || null,
+      checkout_completado: form.checkout_completado,
+      fianza_devuelta: true,
+      fianza_devuelta_fecha: form.fianza_devuelta_fecha,
+    }).eq('id', estancia.id);
+    if (error) { setErr(error.message); setSaving(false); return; }
+    if (estancia.unidad_id) {
+      await sb.from('unidades').update({ estado: 'LIBRE' }).eq('id', estancia.unidad_id);
+    }
+    setSaving(false);
+    onSaved();
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 440, boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
+        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#EF4444' }}>🚪 Dar de baja</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={lbl}>Fecha de salida real</label>
+            <input style={inp} type="date" value={form.fecha_salida_real} onChange={(e: { target: { value: string } }) => setForm(f => ({ ...f, fecha_salida_real: e.target.value }))} />
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.checkout_completado} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, checkout_completado: e.target.checked }))} />
+            Checkout completado
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer', fontWeight: form.fianza_devuelta ? 700 : 400 }}>
+            <input type="checkbox" checked={form.fianza_devuelta} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, fianza_devuelta: e.target.checked }))} />
+            Fianza devuelta *
+          </label>
+          {form.fianza_devuelta && (
+            <div>
+              <label style={lbl}>Fecha devolución fianza *</label>
+              <input style={inp} type="date" value={form.fianza_devuelta_fecha} onChange={(e: { target: { value: string } }) => setForm(f => ({ ...f, fianza_devuelta_fecha: e.target.value }))} />
+            </div>
+          )}
+          {err && <p style={{ margin: 0, color: '#EF4444', fontSize: 12, background: '#FEF2F2', padding: '8px 12px', borderRadius: 8 }}>{err}</p>}
+          {!canConfirm && <p style={{ margin: 0, color: '#6B7280', fontSize: 12 }}>Marca "Fianza devuelta" y añade la fecha para confirmar.</p>}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'white', border: '1.5px solid #E2E6EF', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B7280' }}>
+              Cancelar
+            </button>
+            <button onClick={handleConfirmar} disabled={saving || !canConfirm} style={{ flex: 2, padding: '11px', background: canConfirm ? '#EF4444' : '#F3F4F6', color: canConfirm ? 'white' : '#9CA3AF', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: canConfirm ? 'pointer' : 'default' }}>
+              {saving ? 'Procesando...' : 'Confirmar baja'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SectionCheckins() {
   const [estancias, setEstancias] = useState<Estancia[]>([]);
   const [inquilinos, setInquilinos] = useState<Inquilino[]>([]);
@@ -382,6 +471,7 @@ export default function SectionCheckins() {
   const [modalOpen, setModalOpen] = useState(false);
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
   const [editEstancia, setEditEstancia] = useState<Estancia | null>(null);
+  const [bajaEstancia, setBajaEstancia] = useState<Estancia | null>(null);
 
   const inqMap: Record<string, Inquilino> = {};
   for (const inq of inquilinos) inqMap[inq.id] = inq;
@@ -415,6 +505,21 @@ export default function SectionCheckins() {
   }
 
   useEffect(() => { load(); }, []);
+
+  async function abrirBaja(est: Estancia) {
+    const sb = createClient();
+    const { data: pagosPendientes } = await sb
+      .from('pagos')
+      .select('id')
+      .eq('estancia_id', est.id)
+      .in('estado', ['PENDIENTE', 'VENCIDO']);
+    const n = pagosPendientes?.length ?? 0;
+    if (n > 0) {
+      alert(`No se puede dar de baja: hay ${n} pago(s) pendiente(s)/vencido(s). Resuélvelos en Finanzas primero.`);
+      return;
+    }
+    setBajaEstancia(est);
+  }
 
   async function eliminarEstancia(id: string) {
     if (!confirm('¿Seguro que quieres eliminar esta estancia?')) return;
@@ -521,11 +626,17 @@ export default function SectionCheckins() {
                           }
                         </td>
                         <td style={{ padding: '10px 12px' }}>
-                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                          <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
                             <button
                               onClick={() => { setEditEstancia(est); setModalOpen(true); }}
                               style={{ background: '#EFF6FF', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#1E4DB7', cursor: 'pointer' }}
                             >✏️ Editar</button>
+                            {est.estado === 'ACTIVA' && (
+                              <button
+                                onClick={() => abrirBaja(est)}
+                                style={{ background: '#FEF3C7', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#B45309', cursor: 'pointer' }}
+                              >🚪 Dar de baja</button>
+                            )}
                             <button
                               onClick={() => eliminarEstancia(est.id)}
                               style={{ width: 28, height: 28, background: '#FEE2E2', border: 'none', borderRadius: 7, fontSize: 14, color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -549,6 +660,14 @@ export default function SectionCheckins() {
           editData={editEstancia}
           onClose={() => { setModalOpen(false); setEditEstancia(null); }}
           onSaved={() => { setModalOpen(false); setEditEstancia(null); load(); }}
+        />
+      )}
+
+      {bajaEstancia && (
+        <BajaModal
+          estancia={bajaEstancia}
+          onClose={() => setBajaEstancia(null)}
+          onSaved={() => { setBajaEstancia(null); load(); }}
         />
       )}
     </div>

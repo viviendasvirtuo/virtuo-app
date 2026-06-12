@@ -209,6 +209,7 @@ interface FormData {
   direccion: string;
   ciudad: string;
   barrio: string;
+  referencia: string;
   tipo: string;
   num_unidades: string;
   estado: string;
@@ -223,6 +224,7 @@ const EMPTY_FORM: FormData = {
   direccion: '',
   ciudad: 'Barcelona',
   barrio: '',
+  referencia: '',
   tipo: 'piso',
   num_unidades: '',
   estado: 'CAPTACION',
@@ -276,6 +278,7 @@ function PropiedadModal({
           direccion: editData.direccion ?? '',
           ciudad: editData.ciudad ?? 'Barcelona',
           barrio: editData.barrio ?? '',
+          referencia: (editData as unknown as { referencia?: string }).referencia ?? '',
           tipo: editData.tipo ?? 'piso',
           num_unidades: editData.num_unidades != null ? String(editData.num_unidades) : '',
           estado: editData.estado ?? 'CAPTACION',
@@ -307,6 +310,7 @@ function PropiedadModal({
       direccion: form.direccion.trim(),
       ciudad: form.ciudad.trim(),
       barrio: form.barrio.trim() || null,
+      referencia: form.referencia.trim() || null,
       tipo: form.tipo,
       num_unidades: form.num_unidades ? Number(form.num_unidades) : null,
       estado: form.estado,
@@ -356,6 +360,10 @@ function PropiedadModal({
             <div>
               <label style={lbl}>Barrio</label>
               <input style={inp} value={form.barrio} onChange={(e: { target: { value: string } }) => set('barrio', e.target.value)} placeholder="Sants" />
+            </div>
+            <div>
+              <label style={lbl}>Referencia</label>
+              <input style={inp} value={form.referencia} onChange={(e: { target: { value: string } }) => set('referencia', e.target.value)} placeholder="Ej: Mora_2026_01" />
             </div>
             <div>
               <label style={lbl}>Tipo</label>

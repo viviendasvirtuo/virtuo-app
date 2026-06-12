@@ -447,7 +447,7 @@ function BajaModal({
             </div>
           )}
           {err && <p style={{ margin: 0, color: '#EF4444', fontSize: 12, background: '#FEF2F2', padding: '8px 12px', borderRadius: 8 }}>{err}</p>}
-          {!canConfirm && <p style={{ margin: 0, color: '#6B7280', fontSize: 12 }}>Marca "Fianza devuelta" y añade la fecha para confirmar.</p>}
+          {!canConfirm && <p style={{ margin: 0, color: '#6B7280', fontSize: 12 }}>Marca &quot;Fianza devuelta&quot; y añade la fecha para confirmar.</p>}
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'white', border: '1.5px solid #E2E6EF', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B7280' }}>
               Cancelar

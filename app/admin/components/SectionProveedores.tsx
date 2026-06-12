@@ -134,7 +134,9 @@ function ProveedorModal({
       if (error) { setErr(error.message); setSaving(false); return; }
     } else {
       const id = 'PROV_' + Date.now().toString().slice(-8);
-      const { error } = await sb.from('proveedores').insert({ id, ...payload });
+      console.log('PAYLOAD A INSERTAR:', { id, ...payload });
+      const { data, error } = await sb.from('proveedores').insert({ id, ...payload }).select();
+      console.log('RESULTADO INSERT - data:', data, 'error:', error);
       if (error) { setErr(error.message); setSaving(false); return; }
     }
 

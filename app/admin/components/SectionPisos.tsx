@@ -318,9 +318,6 @@ function PropiedadModal({
 
     if (isEdit && editData) {
       const { error } = await sb.from('propiedades').update(payload).eq('id', editData.id);
-      console.log('UPDATE result:', { error, payload, id: editData.id });
-      const check = await sb.from('propiedades').select('*').eq('id', editData.id).single();
-      console.log('CHECK after update:', check);
       if (error) { setErr(error.message); setSaving(false); return; }
     } else {
       const id = generateId(form.barrio, form.ciudad);

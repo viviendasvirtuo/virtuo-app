@@ -9,6 +9,7 @@ interface Estancia {
   fecha_entrada: string;
   fecha_salida_prevista: string;
   inquilinos: {
+    id: string;
     nombre: string;
     apellidos: string;
     email: string;
@@ -68,7 +69,7 @@ export default function PortalPage() {
 
     const { data: estanciaData, error: estanciaError } = await sb
       .from('estancias')
-      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, inquilinos(nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password))')
+      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password))')
       .eq('unidad_id', codigo.trim().toUpperCase())
       .eq('estado', 'ACTIVA')
       .single();
@@ -110,15 +111,19 @@ export default function PortalPage() {
     setIncEnviando(true);
     setIncError('');
 
+    const incId = 'INC_' + Date.now().toString().slice(-8);
+
     const { error: insertError } = await sb.from('incidencias').insert({
+      id: incId,
       propiedad_id: estancia.unidades.propiedad_id,
       unidad_id: codigo.trim().toUpperCase(),
       estancia_id: estancia.id,
-      reportado_por: `${estancia.inquilinos.nombre} ${estancia.inquilinos.apellidos}`,
+      reportado_por: estancia.inquilinos.id,
       tipo: incTipo,
       descripcion: incDesc.trim(),
       prioridad: incPrioridad,
       estado: 'ABIERTA',
+      sla_horas: 48,
       fecha_reporte: new Date().toISOString(),
     });
 
@@ -142,7 +147,7 @@ export default function PortalPage() {
     setIncEnviando(false);
     setIncExito(true);
     setMostrarFormInc(false);
-    setTimeout(() => setIncExito(false), 4000);
+    setTimeout(() => setIncExito(false), 5000);
   }
 
   if (!estancia) {
@@ -242,45 +247,35 @@ export default function PortalPage() {
           )}
         </div>
 
-        {/* Incidencias */}
+        {/* Incidencias + formulario */}
         <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
-          <h2 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '700', color: '#1E4DB7' }}>🔧 Mis incidencias</h2>
-          {incidencias.length === 0 ? (
-            <p style={{ color: '#9CA3AF', fontSize: '14px' }}>No hay incidencias registradas.</p>
-          ) : (
-            incidencias.map((inc) => (
-              <div key={inc.id} style={{ padding: '12px 0', borderBottom: '1px solid #F3F4F6' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <p style={{ margin: 0, fontWeight: '600', fontSize: '14px', color: '#111827', textTransform: 'capitalize' }}>{inc.tipo}</p>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: prioridadColor[inc.prioridad] || '#6B7280', textTransform: 'uppercase' }}>{inc.prioridad}</span>
-                </div>
-                <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#6B7280' }}>{inc.descripcion}</p>
-                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{inc.estado} · {new Date(inc.fecha_reporte).toLocaleDateString('es-ES')}</span>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Reportar incidencia */}
-        <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: mostrarFormInc ? '16px' : '0' }}>
-            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#1E4DB7' }}>🛠️ Reportar incidencia</h2>
+          {/* Cabecera con botón */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#1E4DB7' }}>🔧 Mis incidencias</h2>
             <button
               onClick={() => { setMostrarFormInc(!mostrarFormInc); setIncError(''); }}
-              style={{ padding: '8px 14px', background: mostrarFormInc ? '#F3F4F6' : '#1E4DB7', color: mostrarFormInc ? '#6B7280' : 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+              style={{
+                padding: '7px 12px',
+                background: mostrarFormInc ? '#F3F4F6' : '#FFF3CD',
+                color: mostrarFormInc ? '#6B7280' : '#92400E',
+                border: `1px solid ${mostrarFormInc ? '#E2E6EF' : '#FCD34D'}`,
+                borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap'
+              }}
             >
-              {mostrarFormInc ? 'Cancelar' : '+ Nueva'}
+              {mostrarFormInc ? '✕ Cancelar' : '⚠️ Reportar incidencia'}
             </button>
           </div>
 
+          {/* Confirmación de envío */}
           {incExito && (
-            <div style={{ padding: '12px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px', color: '#15803D', fontSize: '14px', fontWeight: '600', marginTop: '12px' }}>
-              ✅ Incidencia enviada. Te contactaremos pronto.
+            <div style={{ marginBottom: '16px', padding: '12px 14px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px', color: '#15803D', fontSize: '14px', fontWeight: '600' }}>
+              ✅ Incidencia enviada correctamente. Te contactaremos en menos de 48 h.
             </div>
           )}
 
+          {/* Formulario */}
           {mostrarFormInc && (
-            <div>
+            <div style={{ marginBottom: '20px', padding: '16px', background: '#F8FAFF', border: '1px solid #E2E6EF', borderRadius: '12px' }}>
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Tipo *</label>
                 <select
@@ -291,12 +286,10 @@ export default function PortalPage() {
                   <option value="">Selecciona una categoría…</option>
                   <option value="fontaneria">Fontanería</option>
                   <option value="electricidad">Electricidad</option>
-                  <option value="calefaccion">Calefacción / Climatización</option>
-                  <option value="cerradura">Cerradura / Llave</option>
-                  <option value="limpieza">Limpieza / Suciedad</option>
-                  <option value="electrodomestico">Electrodoméstico</option>
-                  <option value="wifi">WiFi / Internet</option>
-                  <option value="otro">Otro</option>
+                  <option value="limpieza">Limpieza</option>
+                  <option value="cerrajeria">Cerrajería</option>
+                  <option value="climatizacion">Climatización</option>
+                  <option value="otros">Otros</option>
                 </select>
               </div>
 
@@ -312,23 +305,16 @@ export default function PortalPage() {
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Urgencia</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(['baja', 'media', 'alta'] as const).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setIncPrioridad(p)}
-                      style={{
-                        flex: 1, padding: '8px', border: `2px solid ${incPrioridad === p ? prioridadColor[p] : '#E2E6EF'}`,
-                        borderRadius: '8px', background: incPrioridad === p ? `${prioridadColor[p]}22` : 'white',
-                        color: incPrioridad === p ? prioridadColor[p] : '#6B7280',
-                        fontSize: '13px', fontWeight: '600', cursor: 'pointer', textTransform: 'capitalize'
-                      }}
-                    >
-                      {p === 'baja' ? '🟢' : p === 'media' ? '🟡' : '🔴'} {p}
-                    </button>
-                  ))}
-                </div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Prioridad</label>
+                <select
+                  value={incPrioridad}
+                  onChange={(e) => setIncPrioridad(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E2E6EF', borderRadius: '8px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box' }}
+                >
+                  <option value="alta">🔴 Alta — urgente</option>
+                  <option value="media">🟡 Media — esta semana</option>
+                  <option value="baja">🟢 Baja — cuando puedas</option>
+                </select>
               </div>
 
               {incError && (
@@ -340,11 +326,27 @@ export default function PortalPage() {
               <button
                 onClick={handleReportarIncidencia}
                 disabled={incEnviando}
-                style={{ width: '100%', padding: '14px', background: incEnviando ? '#93AADA' : '#1E4DB7', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: incEnviando ? 'not-allowed' : 'pointer' }}
+                style={{ width: '100%', padding: '13px', background: incEnviando ? '#93AADA' : '#1E4DB7', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: incEnviando ? 'not-allowed' : 'pointer' }}
               >
                 {incEnviando ? 'Enviando…' : 'Enviar incidencia'}
               </button>
             </div>
+          )}
+
+          {/* Lista de incidencias */}
+          {incidencias.length === 0 ? (
+            <p style={{ color: '#9CA3AF', fontSize: '14px' }}>No hay incidencias registradas.</p>
+          ) : (
+            incidencias.map((inc) => (
+              <div key={inc.id} style={{ padding: '12px 0', borderBottom: '1px solid #F3F4F6' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <p style={{ margin: 0, fontWeight: '600', fontSize: '14px', color: '#111827', textTransform: 'capitalize' }}>{inc.tipo}</p>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: prioridadColor[inc.prioridad] || '#6B7280', textTransform: 'uppercase' }}>{inc.prioridad}</span>
+                </div>
+                <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#6B7280' }}>{inc.descripcion}</p>
+                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{inc.estado} · {new Date(inc.fecha_reporte).toLocaleDateString('es-ES')}</span>
+              </div>
+            ))
           )}
         </div>
 

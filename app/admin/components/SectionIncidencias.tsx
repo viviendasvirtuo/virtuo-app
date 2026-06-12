@@ -281,6 +281,13 @@ export default function SectionIncidencias() {
 
   useEffect(() => { load(); }, []);
 
+  async function eliminarIncidencia(id: string) {
+    if (!confirm('¿Eliminar esta incidencia?')) return;
+    const sb = createClient();
+    const { error } = await sb.from('incidencias').delete().eq('id', id);
+    if (error) alert(error.message); else load();
+  }
+
   function openEdit(inc: IncidenciaRow) {
     setEditTarget({ ...inc, _isEdit: true });
     setModalOpen(true);
@@ -363,12 +370,21 @@ export default function SectionIncidencias() {
                       <span style={{ background: C.rl, color: C.r, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8 }}>⏰ SLA VENCIDO</span>
                     )}
                   </div>
-                  <button
-                    onClick={() => openEdit(inc)}
-                    style={{ background: '#F0F4FF', border: 'none', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#1E4DB7', cursor: 'pointer', flexShrink: 0 }}
-                  >
-                    ✏️ Editar
-                  </button>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button
+                      onClick={() => openEdit(inc)}
+                      style={{ background: '#F0F4FF', border: 'none', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#1E4DB7', cursor: 'pointer' }}
+                    >
+                      ✏️ Editar
+                    </button>
+                    <button
+                      onClick={() => eliminarIncidencia(inc.id)}
+                      title="Eliminar"
+                      style={{ background: '#F3F4F6', color: '#6B7280', border: 'none', borderRadius: 6, width: 28, height: 28, fontSize: 13, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                      onMouseEnter={(e: { currentTarget: HTMLButtonElement }) => { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.color = '#EF4444'; }}
+                      onMouseLeave={(e: { currentTarget: HTMLButtonElement }) => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#6B7280'; }}
+                    >✕</button>
+                  </div>
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: C.g9, marginBottom: 4, textTransform: 'capitalize' }}>{inc.tipo}</div>
                 {inc.descripcion && (

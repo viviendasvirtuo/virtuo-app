@@ -24,6 +24,22 @@ interface PagoDetalle {
   inquilino: string;
   importe: number;
   estado: string;
+  estancia_id: string | null;
+  concepto: string | null;
+  mes_facturado: string | null;
+  fecha_vencimiento: string | null;
+  fecha_pago: string | null;
+  metodo_pago: string | null;
+}
+
+interface GastoDetalle {
+  id: string;
+  concepto: string;
+  importe: number;
+  mes: string | null;
+  fecha_pago: string | null;
+  propiedad_id: string | null;
+  propiedad_nombre: string | null;
 }
 
 interface EstanciaSimple {
@@ -91,16 +107,31 @@ const inp = {
 
 const lbl = { display: 'block', fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 4 };
 
-function PagoModal({ estancias, onClose, onSaved }: {
+function PagoModal({ estancias, editData, onClose, onSaved }: {
   estancias: EstanciaSimple[];
+  editData?: PagoDetalle | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState<PagoForm>({
-    estancia_id: '', concepto: 'renta', mes_facturado: currentMonthStr(),
-    importe: '', estado: 'PAGADO', fecha_vencimiento: todayStr(),
-    fecha_pago: todayStr(), metodo_pago: 'transferencia',
-  });
+  const isEdit = !!editData;
+  const [form, setForm] = useState<PagoForm>(
+    isEdit && editData
+      ? {
+          estancia_id: editData.estancia_id ?? '',
+          concepto: editData.concepto ?? 'renta',
+          mes_facturado: editData.mes_facturado ?? currentMonthStr(),
+          importe: String(editData.importe),
+          estado: editData.estado,
+          fecha_vencimiento: editData.fecha_vencimiento ?? todayStr(),
+          fecha_pago: editData.fecha_pago ?? '',
+          metodo_pago: editData.metodo_pago ?? 'transferencia',
+        }
+      : {
+          estancia_id: '', concepto: 'renta', mes_facturado: currentMonthStr(),
+          importe: '', estado: 'PAGADO', fecha_vencimiento: todayStr(),
+          fecha_pago: todayStr(), metodo_pago: 'transferencia',
+        }
+  );
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
@@ -117,9 +148,7 @@ function PagoModal({ estancias, onClose, onSaved }: {
     if (!form.importe) { setErr('El importe es obligatorio.'); return; }
     setSaving(true); setErr('');
     const sb = createClient();
-    const id = 'PAG_' + Date.now().toString().slice(-8);
-    const { error } = await sb.from('pagos').insert({
-      id,
+    const payload = {
       estancia_id: form.estancia_id || null,
       concepto: form.concepto,
       mes_facturado: form.mes_facturado || null,
@@ -128,8 +157,15 @@ function PagoModal({ estancias, onClose, onSaved }: {
       fecha_vencimiento: form.fecha_vencimiento || null,
       fecha_pago: form.fecha_pago || null,
       metodo_pago: form.metodo_pago || null,
-    });
-    if (error) { setErr(error.message); setSaving(false); return; }
+    };
+    if (isEdit && editData) {
+      const { error } = await sb.from('pagos').update(payload).eq('id', editData.id);
+      if (error) { setErr(error.message); setSaving(false); return; }
+    } else {
+      const id = 'PAG_' + Date.now().toString().slice(-8);
+      const { error } = await sb.from('pagos').insert({ id, ...payload });
+      if (error) { setErr(error.message); setSaving(false); return; }
+    }
     setSaving(false); onSaved();
   }
 
@@ -137,7 +173,9 @@ function PagoModal({ estancias, onClose, onSaved }: {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
         <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1E4DB7' }}>💳 Registrar Pago</h2>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1E4DB7' }}>
+            {isEdit ? '✏️ Editar Pago' : '💳 Registrar Pago'}
+          </h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
         </div>
         <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -197,7 +235,7 @@ function PagoModal({ estancias, onClose, onSaved }: {
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
             <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'white', border: '1.5px solid #E2E6EF', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B7280' }}>Cancelar</button>
             <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '11px', background: '#1E4DB7', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-              {saving ? 'Guardando...' : 'Registrar pago'}
+              {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Registrar pago'}
             </button>
           </div>
         </div>
@@ -206,15 +244,27 @@ function PagoModal({ estancias, onClose, onSaved }: {
   );
 }
 
-function GastoModal({ propiedades, onClose, onSaved }: {
+function GastoModal({ propiedades, editData, onClose, onSaved }: {
   propiedades: PropiedadSimple[];
+  editData?: GastoDetalle | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState<GastoForm>({
-    propiedad_id: '', concepto: 'alquiler_propietario',
-    importe: '', mes: currentMonthStr(), fecha_pago: todayStr(),
-  });
+  const isEdit = !!editData;
+  const [form, setForm] = useState<GastoForm>(
+    isEdit && editData
+      ? {
+          propiedad_id: editData.propiedad_id ?? '',
+          concepto: editData.concepto,
+          importe: String(editData.importe),
+          mes: editData.mes ?? currentMonthStr(),
+          fecha_pago: editData.fecha_pago ?? todayStr(),
+        }
+      : {
+          propiedad_id: '', concepto: 'alquiler_propietario',
+          importe: '', mes: currentMonthStr(), fecha_pago: todayStr(),
+        }
+  );
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
@@ -226,16 +276,21 @@ function GastoModal({ propiedades, onClose, onSaved }: {
     if (!form.importe) { setErr('El importe es obligatorio.'); return; }
     setSaving(true); setErr('');
     const sb = createClient();
-    const id = 'GAS_' + Date.now().toString().slice(-8);
-    const { error } = await sb.from('gastos').insert({
-      id,
+    const payload = {
       propiedad_id: form.propiedad_id || null,
       concepto: form.concepto,
       importe: Number(form.importe),
       mes: form.mes || null,
       fecha_pago: form.fecha_pago || null,
-    });
-    if (error) { setErr(error.message); setSaving(false); return; }
+    };
+    if (isEdit && editData) {
+      const { error } = await sb.from('gastos').update(payload).eq('id', editData.id);
+      if (error) { setErr(error.message); setSaving(false); return; }
+    } else {
+      const id = 'GAS_' + Date.now().toString().slice(-8);
+      const { error } = await sb.from('gastos').insert({ id, ...payload });
+      if (error) { setErr(error.message); setSaving(false); return; }
+    }
     setSaving(false); onSaved();
   }
 
@@ -243,7 +298,9 @@ function GastoModal({ propiedades, onClose, onSaved }: {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 460, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
         <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#27AE60' }}>📉 Registrar Gasto</h2>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#27AE60' }}>
+            {isEdit ? '✏️ Editar Gasto' : '📉 Registrar Gasto'}
+          </h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
         </div>
         <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -283,7 +340,7 @@ function GastoModal({ propiedades, onClose, onSaved }: {
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
             <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'white', border: '1.5px solid #E2E6EF', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B7280' }}>Cancelar</button>
             <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '11px', background: '#27AE60', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-              {saving ? 'Guardando...' : 'Registrar gasto'}
+              {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Registrar gasto'}
             </button>
           </div>
         </div>
@@ -296,23 +353,27 @@ export default function SectionFinanzas() {
   const [meses, setMeses] = useState<MesData[]>([]);
   const [breakdown, setBreakdown] = useState<GastoCategoria[]>([]);
   const [pagosDetalle, setPagosDetalle] = useState<PagoDetalle[]>([]);
+  const [gastosDetalle, setGastosDetalle] = useState<GastoDetalle[]>([]);
   const [estancias, setEstancias] = useState<EstanciaSimple[]>([]);
   const [propiedades, setPropiedades] = useState<PropiedadSimple[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMes, setSelectedMes] = useState(0);
   const [pagoModal, setPagoModal] = useState(false);
   const [gastoModal, setGastoModal] = useState(false);
+  const [editPago, setEditPago] = useState<PagoDetalle | null>(null);
+  const [editGasto, setEditGasto] = useState<GastoDetalle | null>(null);
 
   async function load() {
     try {
       const sb = createClient();
 
-      const [pagosRes, gastosRes, pagosDetRes, estanciasRes, propiedadesRes] = await Promise.all([
+      const [pagosRes, gastosRes, pagosDetRes, gastosDetRes, estanciasRes, propiedadesRes] = await Promise.all([
         sb.from('pagos').select('importe, fecha_vencimiento, estado'),
         sb.from('gastos').select('importe, fecha_pago, mes, concepto'),
         sb.from('pagos').select(
-          'id, importe, fecha_vencimiento, fecha_pago, estado, mes_facturado, estancias(inquilinos(nombre, apellidos), unidades(nombre, propiedades(nombre)))'
+          'id, estancia_id, concepto, importe, fecha_vencimiento, fecha_pago, estado, mes_facturado, metodo_pago, estancias(inquilinos(nombre, apellidos), unidades(nombre, propiedades(nombre)))'
         ).order('fecha_vencimiento', { ascending: false }).limit(15),
+        sb.from('gastos').select('id, concepto, importe, mes, fecha_pago, propiedad_id, propiedades(nombre)').order('fecha_pago', { ascending: false }).limit(15),
         sb.from('estancias').select('id, inquilinos(nombre, apellidos), unidades(nombre)').eq('estado', 'ACTIVA'),
         sb.from('propiedades').select('id, nombre').order('nombre'),
       ]);
@@ -352,8 +413,10 @@ export default function SectionFinanzas() {
 
       // Detalle pagos recientes
       type PagoRaw = {
-        id: string; importe: string | number; fecha_vencimiento: string;
+        id: string; estancia_id: string | null; concepto: string | null;
+        importe: string | number; fecha_vencimiento: string | null;
         fecha_pago: string | null; estado: string; mes_facturado: string | null;
+        metodo_pago: string | null;
         estancias: {
           inquilinos: { nombre: string; apellidos: string | null } | null;
           unidades: { nombre: string; propiedades: { nombre: string } | null } | null;
@@ -368,6 +431,34 @@ export default function SectionFinanzas() {
           propiedad: p.estancias?.unidades?.propiedades?.nombre ?? '—',
           importe: Number(p.importe),
           estado: p.estado,
+          estancia_id: p.estancia_id,
+          concepto: p.concepto,
+          mes_facturado: p.mes_facturado,
+          fecha_vencimiento: p.fecha_vencimiento,
+          fecha_pago: p.fecha_pago,
+          metodo_pago: p.metodo_pago,
+        };
+      });
+
+      // Detalle gastos recientes
+      type GastoRaw = {
+        id: string; concepto: string; importe: string | number;
+        mes: string | null; fecha_pago: string | null;
+        propiedad_id: string | null;
+        propiedades: { nombre: string }[] | { nombre: string } | null;
+      };
+      const gastosDetData: GastoDetalle[] = ((gastosDetRes.data ?? []) as unknown as GastoRaw[]).map(g => {
+        const propNombre = Array.isArray(g.propiedades)
+          ? (g.propiedades[0]?.nombre ?? null)
+          : (g.propiedades?.nombre ?? null);
+        return {
+          id: g.id,
+          concepto: g.concepto,
+          importe: Number(g.importe),
+          mes: g.mes,
+          fecha_pago: g.fecha_pago,
+          propiedad_id: g.propiedad_id,
+          propiedad_nombre: propNombre,
         };
       });
 
@@ -386,6 +477,7 @@ export default function SectionFinanzas() {
       setMeses(mesesData);
       setBreakdown(breakdownData);
       setPagosDetalle(detData);
+      setGastosDetalle(gastosDetData);
       setEstancias(estData);
       setPropiedades((propiedadesRes.data ?? []) as PropiedadSimple[]);
     } catch (e) {
@@ -397,10 +489,46 @@ export default function SectionFinanzas() {
 
   useEffect(() => { load(); }, []);
 
+  async function eliminarPago(id: string) {
+    if (!confirm('¿Seguro que quieres eliminar este pago?')) return;
+    const sb = createClient();
+    await sb.from('pagos').delete().eq('id', id);
+    await load();
+  }
+
+  async function eliminarGasto(id: string) {
+    if (!confirm('¿Seguro que quieres eliminar este gasto?')) return;
+    const sb = createClient();
+    await sb.from('gastos').delete().eq('id', id);
+    await load();
+  }
+
+  function abrirEditPago(p: PagoDetalle) {
+    setEditPago(p);
+    setPagoModal(true);
+  }
+
+  function abrirEditGasto(g: GastoDetalle) {
+    setEditGasto(g);
+    setGastoModal(true);
+  }
+
+  function cerrarPagoModal() {
+    setPagoModal(false);
+    setEditPago(null);
+  }
+
+  function cerrarGastoModal() {
+    setGastoModal(false);
+    setEditGasto(null);
+  }
+
   const totalIngresos = meses.reduce((a: number, m: MesData) => a + m.ingresos, 0);
   const totalGastos = meses.reduce((a: number, m: MesData) => a + m.gastos, 0);
   const totalBeneficio = meses.reduce((a: number, m: MesData) => a + m.beneficio, 0);
   const maxVal = meses.length > 0 ? Math.max(...meses.map((m: MesData) => Math.max(m.ingresos, m.gastos, 1))) : 1;
+
+  const btnAcc = { background: '#F3F4F6', color: '#6B7280', border: 'none', borderRadius: 6, width: 26, height: 26, fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' };
 
   if (loading) return (
     <div>{[1, 2, 3].map(i => <div key={i} style={{ background: C.g1, borderRadius: 10, height: 80, marginBottom: 12 }} />)}</div>
@@ -412,13 +540,13 @@ export default function SectionFinanzas() {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 14 }}>
         <button
-          onClick={() => setPagoModal(true)}
+          onClick={() => { setEditPago(null); setPagoModal(true); }}
           style={{ padding: '8px 16px', background: '#1E4DB7', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
         >
           + Registrar Pago
         </button>
         <button
-          onClick={() => setGastoModal(true)}
+          onClick={() => { setEditGasto(null); setGastoModal(true); }}
           style={{ padding: '8px 16px', background: '#27AE60', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
         >
           + Registrar Gasto
@@ -494,13 +622,14 @@ export default function SectionFinanzas() {
         </div>
       </div>
 
-      <div style={card}>
+      {/* Tabla Pagos */}
+      <div style={{ ...card, marginBottom: 14 }}>
         <div style={cardHead}>💳 Pagos recientes</div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ background: C.g0 }}>
-                {['Propiedad', 'Habitación', 'Inquilino', 'Importe', 'Estado'].map(h => (
+                {['Propiedad', 'Habitación', 'Inquilino', 'Importe', 'Estado', ''].map(h => (
                   <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: C.g5, fontWeight: 600, borderBottom: `1px solid ${C.bd}` }}>{h}</th>
                 ))}
               </tr>
@@ -521,6 +650,70 @@ export default function SectionFinanzas() {
                       fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 7,
                     }}>{row.estado.toUpperCase()}</span>
                   </td>
+                  <td style={{ padding: '9px 14px' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        style={{ ...btnAcc, background: '#F0F4FF', color: C.b }}
+                        onClick={() => abrirEditPago(row)}
+                        title="Editar"
+                        onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.bl; }}
+                        onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = '#F0F4FF'; }}
+                      >✏️</button>
+                      <button
+                        style={btnAcc}
+                        onClick={() => eliminarPago(row.id)}
+                        title="Eliminar"
+                        onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = '#FEE2E2'; el.style.color = '#EF4444'; }}
+                        onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = '#F3F4F6'; el.style.color = '#6B7280'; }}
+                      >✕</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Tabla Gastos */}
+      <div style={card}>
+        <div style={cardHead}>📉 Gastos recientes</div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: C.g0 }}>
+                {['Concepto', 'Propiedad', 'Mes', 'Importe', ''].map(h => (
+                  <th key={h} style={{ padding: '9px 14px', textAlign: 'left', color: C.g5, fontWeight: 600, borderBottom: `1px solid ${C.bd}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {gastosDetalle.map((row: GastoDetalle) => (
+                <tr key={row.id} style={{ borderBottom: `1px solid ${C.g1}` }}>
+                  <td style={{ padding: '9px 14px', color: C.g9, textTransform: 'capitalize' }}>{row.concepto.replace(/_/g, ' ')}</td>
+                  <td style={{ padding: '9px 14px', color: C.g5 }}>{row.propiedad_nombre ?? '—'}</td>
+                  <td style={{ padding: '9px 14px', color: C.g5 }}>{row.mes ? mesLabel(row.mes) : '—'}</td>
+                  <td style={{ padding: '9px 14px', fontFamily: "'Fraunces', serif", fontWeight: 700, color: C.r }}>
+                    {row.importe > 0 ? `${row.importe.toLocaleString()}€` : '—'}
+                  </td>
+                  <td style={{ padding: '9px 14px' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        style={{ ...btnAcc, background: '#F0F4FF', color: C.b }}
+                        onClick={() => abrirEditGasto(row)}
+                        title="Editar"
+                        onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.bl; }}
+                        onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = '#F0F4FF'; }}
+                      >✏️</button>
+                      <button
+                        style={btnAcc}
+                        onClick={() => eliminarGasto(row.id)}
+                        title="Eliminar"
+                        onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = '#FEE2E2'; el.style.color = '#EF4444'; }}
+                        onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = '#F3F4F6'; el.style.color = '#6B7280'; }}
+                      >✕</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -531,15 +724,17 @@ export default function SectionFinanzas() {
       {pagoModal && (
         <PagoModal
           estancias={estancias}
-          onClose={() => setPagoModal(false)}
-          onSaved={() => { setPagoModal(false); load(); }}
+          editData={editPago}
+          onClose={cerrarPagoModal}
+          onSaved={() => { cerrarPagoModal(); load(); }}
         />
       )}
       {gastoModal && (
         <GastoModal
           propiedades={propiedades}
-          onClose={() => setGastoModal(false)}
-          onSaved={() => { setGastoModal(false); load(); }}
+          editData={editGasto}
+          onClose={cerrarGastoModal}
+          onSaved={() => { cerrarGastoModal(); load(); }}
         />
       )}
     </div>

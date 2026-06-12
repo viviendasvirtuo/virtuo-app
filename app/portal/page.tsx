@@ -14,7 +14,9 @@ interface Estancia {
     email: string;
   };
   unidades: {
+    id: string;
     nombre: string;
+    propiedad_id: string;
     propiedades: {
       nombre: string;
       wifi_nombre: string;
@@ -49,6 +51,14 @@ export default function PortalPage() {
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
 
+  const [mostrarFormInc, setMostrarFormInc] = useState(false);
+  const [incTipo, setIncTipo] = useState('');
+  const [incDesc, setIncDesc] = useState('');
+  const [incPrioridad, setIncPrioridad] = useState('media');
+  const [incEnviando, setIncEnviando] = useState(false);
+  const [incExito, setIncExito] = useState(false);
+  const [incError, setIncError] = useState('');
+
   const sb = createClient();
 
   async function handleLogin() {
@@ -58,7 +68,7 @@ export default function PortalPage() {
 
     const { data: estanciaData, error: estanciaError } = await sb
       .from('estancias')
-      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, inquilinos(nombre, apellidos, email), unidades(nombre, propiedades(nombre, wifi_nombre, wifi_password))')
+      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, inquilinos(nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password))')
       .eq('unidad_id', codigo.trim().toUpperCase())
       .eq('estado', 'ACTIVA')
       .single();
@@ -89,6 +99,50 @@ export default function PortalPage() {
 
     setIncidencias((incidenciasData as Incidencia[]) || []);
     setLoading(false);
+  }
+
+  async function handleReportarIncidencia() {
+    if (!incTipo || !incDesc.trim()) {
+      setIncError('Completa el tipo y la descripción.');
+      return;
+    }
+    if (!estancia) return;
+    setIncEnviando(true);
+    setIncError('');
+
+    const { error: insertError } = await sb.from('incidencias').insert({
+      propiedad_id: estancia.unidades.propiedad_id,
+      unidad_id: codigo.trim().toUpperCase(),
+      estancia_id: estancia.id,
+      reportado_por: `${estancia.inquilinos.nombre} ${estancia.inquilinos.apellidos}`,
+      tipo: incTipo,
+      descripcion: incDesc.trim(),
+      prioridad: incPrioridad,
+      estado: 'ABIERTA',
+      fecha_reporte: new Date().toISOString(),
+    });
+
+    if (insertError) {
+      setIncError('Error al enviar. Inténtalo de nuevo.');
+      setIncEnviando(false);
+      return;
+    }
+
+    const { data: inc2 } = await sb
+      .from('incidencias')
+      .select('id, tipo, descripcion, prioridad, estado, fecha_reporte')
+      .eq('unidad_id', codigo.trim().toUpperCase())
+      .order('fecha_reporte', { ascending: false })
+      .limit(5);
+    setIncidencias((inc2 as Incidencia[]) || []);
+
+    setIncTipo('');
+    setIncDesc('');
+    setIncPrioridad('media');
+    setIncEnviando(false);
+    setIncExito(true);
+    setMostrarFormInc(false);
+    setTimeout(() => setIncExito(false), 4000);
   }
 
   if (!estancia) {
@@ -204,6 +258,93 @@ export default function PortalPage() {
                 <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{inc.estado} · {new Date(inc.fecha_reporte).toLocaleDateString('es-ES')}</span>
               </div>
             ))
+          )}
+        </div>
+
+        {/* Reportar incidencia */}
+        <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: mostrarFormInc ? '16px' : '0' }}>
+            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#1E4DB7' }}>🛠️ Reportar incidencia</h2>
+            <button
+              onClick={() => { setMostrarFormInc(!mostrarFormInc); setIncError(''); }}
+              style={{ padding: '8px 14px', background: mostrarFormInc ? '#F3F4F6' : '#1E4DB7', color: mostrarFormInc ? '#6B7280' : 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+            >
+              {mostrarFormInc ? 'Cancelar' : '+ Nueva'}
+            </button>
+          </div>
+
+          {incExito && (
+            <div style={{ padding: '12px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px', color: '#15803D', fontSize: '14px', fontWeight: '600', marginTop: '12px' }}>
+              ✅ Incidencia enviada. Te contactaremos pronto.
+            </div>
+          )}
+
+          {mostrarFormInc && (
+            <div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Tipo *</label>
+                <select
+                  value={incTipo}
+                  onChange={(e) => setIncTipo(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E2E6EF', borderRadius: '8px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box' }}
+                >
+                  <option value="">Selecciona una categoría…</option>
+                  <option value="fontaneria">Fontanería</option>
+                  <option value="electricidad">Electricidad</option>
+                  <option value="calefaccion">Calefacción / Climatización</option>
+                  <option value="cerradura">Cerradura / Llave</option>
+                  <option value="limpieza">Limpieza / Suciedad</option>
+                  <option value="electrodomestico">Electrodoméstico</option>
+                  <option value="wifi">WiFi / Internet</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Descripción *</label>
+                <textarea
+                  value={incDesc}
+                  onChange={(e) => setIncDesc(e.target.value)}
+                  placeholder="Describe el problema con el máximo detalle posible…"
+                  rows={4}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E2E6EF', borderRadius: '8px', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Urgencia</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['baja', 'media', 'alta'] as const).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setIncPrioridad(p)}
+                      style={{
+                        flex: 1, padding: '8px', border: `2px solid ${incPrioridad === p ? prioridadColor[p] : '#E2E6EF'}`,
+                        borderRadius: '8px', background: incPrioridad === p ? `${prioridadColor[p]}22` : 'white',
+                        color: incPrioridad === p ? prioridadColor[p] : '#6B7280',
+                        fontSize: '13px', fontWeight: '600', cursor: 'pointer', textTransform: 'capitalize'
+                      }}
+                    >
+                      {p === 'baja' ? '🟢' : p === 'media' ? '🟡' : '🔴'} {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {incError && (
+                <p style={{ color: '#EF4444', fontSize: '13px', marginBottom: '12px', padding: '10px', background: '#FEF2F2', borderRadius: '8px' }}>
+                  {incError}
+                </p>
+              )}
+
+              <button
+                onClick={handleReportarIncidencia}
+                disabled={incEnviando}
+                style={{ width: '100%', padding: '14px', background: incEnviando ? '#93AADA' : '#1E4DB7', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: incEnviando ? 'not-allowed' : 'pointer' }}
+              >
+                {incEnviando ? 'Enviando…' : 'Enviar incidencia'}
+              </button>
+            </div>
           )}
         </div>
 

@@ -134,7 +134,11 @@ export default function SectionCalculadora() {
           <div style={{ padding: '14px 16px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
               {months.map((m, i) => {
-                const h = Math.max(4, ((calc.beneficio > 0 ? 1 : 0) * 70) + (Math.random() * 10 - 5));
+                const maxAcumulado = calc.beneficio * 12;
+                const acumulado = calc.beneficio * (i + 1);
+                const h = maxAcumulado !== 0
+                  ? Math.max(4, Math.min(80, (Math.abs(acumulado) / Math.abs(maxAcumulado)) * 80))
+                  : 4;
                 return (
                   <div key={m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                     <div style={{ width: '100%', background: calc.beneficio >= 0 ? C.g : C.r, borderRadius: '3px 3px 0 0', height: `${h}px`, opacity: 0.7 + (i / months.length) * 0.3 }} />

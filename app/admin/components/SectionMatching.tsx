@@ -1,84 +1,181 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { C, card, cardHead, cardBody } from './tokens';
 
-const CANDIDATOS = [
-  { nombre: 'Alejandro F.', score: 92, color: C.g, detalles: ['Presupuesto: 650€ ✅', 'Grupo compatible ✅', 'Sin mascotas ✅', 'Duración 12m ✅', 'Horario diurno ✅'] },
-  { nombre: 'María G.', score: 74, color: C.y, detalles: ['Presupuesto: 600€ ⚠️', 'Grupo compatible ✅', '1 mascota ⚠️', 'Duración 6m ⚠️', 'Horario mixto ✅'] },
-];
+interface PropNombre { nombre: string; }
+interface UnidadLibre {
+  id: string;
+  nombre: string;
+  propiedad_id: string | null;
+  precio_actual: number | null;
+  propiedades: PropNombre | null;
+}
 
-const CRITERIOS = [
-  { nombre: 'Presupuesto', peso: 30, color: C.b },
-  { nombre: 'Compatibilidad de grupo', peso: 25, color: C.p },
-  { nombre: 'Horario', peso: 20, color: C.g },
-  { nombre: 'Mascotas', peso: 15, color: C.y },
-  { nombre: 'Duración contrato', peso: 10, color: C.r },
-];
+interface UnidadConProp { propiedad_id: string | null; }
+interface InquilinoGrupo { nombre: string; }
+interface EstanciaActiva {
+  inquilino_id: string | null;
+  unidades: UnidadConProp | null;
+  inquilinos: InquilinoGrupo | null;
+}
+
+interface Candidato {
+  id: string;
+  nombre: string;
+  apellidos: string | null;
+  grupo: string | null;
+  grupo_simplificado: string | null;
+  score_inquilino: number | null;
+  blacklist: boolean | null;
+}
+
+function scoreColor(s: number) {
+  return s >= 80 ? C.g : s >= 60 ? C.y : C.r;
+}
+
+function grupoLabel(grupo: string | null): string {
+  if (!grupo) return '—';
+  const match = grupo.match(/^(G\d+)/);
+  return match ? match[1] : grupo.slice(0, 10);
+}
 
 export default function SectionMatching() {
+  const [unidades, setUnidades] = useState<UnidadLibre[]>([]);
+  const [estancias, setEstancias] = useState<EstanciaActiva[]>([]);
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const sb = createClient();
+        const [r1, r2, r3] = await Promise.all([
+          sb.from('unidades').select('id, nombre, propiedad_id, precio_actual, propiedades(nombre)').eq('estado', 'LIBRE'),
+          sb.from('estancias').select('inquilino_id, unidades(propiedad_id), inquilinos(nombre)').eq('estado', 'ACTIVA'),
+          sb.from('inquilinos').select('id, nombre, apellidos, grupo, grupo_simplificado, score_inquilino, blacklist'),
+        ]);
+        setUnidades((r1.data ?? []) as unknown as UnidadLibre[]);
+        setEstancias((r2.data ?? []) as unknown as EstanciaActiva[]);
+        setCandidatos((r3.data ?? []) as Candidato[]);
+      } catch (e) {
+        setError(String(e));
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading) return (
+    <div style={{ padding: 32, color: C.g5, textAlign: 'center' }}>Calculando compatibilidades…</div>
+  );
+  if (error) return (
+    <div style={{ background: '#FEF2F2', border: '1.5px solid #EF4444', borderRadius: 10, padding: 16, color: '#EF4444' }}>
+      ⚠️ Error: {error}
+    </div>
+  );
+
+  // IDs de inquilinos con estancia activa
+  const activosIds = new Set(estancias.map(e => e.inquilino_id).filter(Boolean) as string[]);
+
+  // Candidatos disponibles (sin estancia activa, sin blacklist)
+  const disponibles = candidatos.filter(c => !c.blacklist && !activosIds.has(c.id));
+
+  // Grupo predominante por propiedad
+  function grupoPredominante(propiedadId: string): string | null {
+    const grupos = estancias
+      .filter(e => e.unidades?.propiedad_id === propiedadId && e.inquilinos)
+      .map(e => (e.inquilinos as unknown as { grupo_simplificado?: string | null })?.grupo_simplificado ?? null)
+      .filter(Boolean) as string[];
+    if (grupos.length === 0) return null;
+    const freq: Record<string, number> = {};
+    for (const g of grupos) freq[g] = (freq[g] ?? 0) + 1;
+    return Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  // Score de compatibilidad
+  function calcScore(candidato: Candidato, grupoPred: string | null): number {
+    const base = (candidato.score_inquilino ?? 5) * 10;
+    const bonus = grupoPred === null ? 10 : candidato.grupo_simplificado === grupoPred ? 20 : 0;
+    return Math.min(100, base + bonus);
+  }
+
   return (
     <div>
       <style>{`@media(max-width:700px){.match-grid{grid-template-columns:1fr!important}}`}</style>
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ ...card, marginBottom: 0 }}>
-          <div style={cardHead}>🤝 Matching · HAB5 Sants 10</div>
-          <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }} className="match-grid">
-            {CANDIDATOS.map((c, i) => (
-              <div key={i} style={{ background: C.g0, borderRadius: 12, padding: 16, border: `1.5px solid ${C.bd}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: C.g9 }}>{c.nombre}</div>
-                    <div style={{ fontSize: 11, color: C.g5, marginTop: 2 }}>Candidato HAB5</div>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: 28, color: c.color }}>{c.score}%</div>
-                    <div style={{ fontSize: 10, color: C.g5 }}>Match score</div>
-                  </div>
-                </div>
-                <div style={{ height: 6, background: C.g1, borderRadius: 3, marginBottom: 12 }}>
-                  <div style={{ height: '100%', width: `${c.score}%`, background: c.color, borderRadius: 3 }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  {c.detalles.map((d, j) => (
-                    <div key={j} style={{ fontSize: 12, color: C.g9, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {d}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+
+      {unidades.length === 0 && (
+        <div style={{ ...card, textAlign: 'center', padding: 32, color: C.g5, fontSize: 14 }}>
+          ✅ No hay unidades libres en este momento
         </div>
-      </div>
+      )}
 
       <div className="match-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        <div style={card}>
-          <div style={cardHead}>⚖️ Pesos de criterios</div>
-          <div style={cardBody}>
-            {CRITERIOS.map((c, i) => (
-              <div key={i} style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, fontWeight: 600, color: C.g9, marginBottom: 4 }}>
-                  <span>{c.nombre}</span><span style={{ color: c.color }}>{c.peso}%</span>
-                </div>
-                <div style={{ height: 5, background: C.g1, borderRadius: 3 }}>
-                  <div style={{ height: '100%', width: `${c.peso}%`, background: c.color, borderRadius: 3 }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {unidades.map(u => {
+          const propId = u.propiedad_id ?? '';
+          const grupoPred = propId ? grupoPredominante(propId) : null;
+          const pisoNombre = u.propiedades?.nombre ?? propId;
 
-        <div style={{ ...card, marginBottom: 0 }}>
-          <div style={cardHead}>🤖 Recomendación IA</div>
-          <div style={cardBody}>
-            <div style={{ background: C.gl, border: `1.5px solid ${C.g}`, borderRadius: 10, padding: 14, marginBottom: 12 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: C.g, marginBottom: 6 }}>✅ Candidato recomendado: Alejandro F.</div>
-              <div style={{ fontSize: 12.5, color: C.g9 }}>Score 92% — Alta compatibilidad con el grupo actual. Presupuesto ajustado, sin mascotas, contrato larga duración. Perfil ideal para integración en comunidad.</div>
+          const ranked = disponibles
+            .map(c => ({ c, score: calcScore(c, grupoPred) }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 3);
+
+          return (
+            <div key={u.id} style={card}>
+              <div style={cardHead}>
+                🏠 {pisoNombre} · {u.nombre}
+                {u.precio_actual && (
+                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: C.b, background: '#EEF2FF', borderRadius: 6, padding: '2px 8px' }}>
+                    {u.precio_actual}€/mes
+                  </span>
+                )}
+              </div>
+              <div style={cardBody}>
+                <div style={{ fontSize: 11, color: C.g5, marginBottom: 12, fontWeight: 600 }}>
+                  {grupoPred
+                    ? <>Perfil predominante: <span style={{ color: C.b }}>{grupoPred}</span></>
+                    : <span style={{ color: C.g }}>Piso vacío — cualquier perfil</span>
+                  }
+                </div>
+
+                {ranked.length === 0 ? (
+                  <div style={{ fontSize: 13, color: C.g5, textAlign: 'center', padding: '8px 0' }}>No hay candidatos disponibles</div>
+                ) : (
+                  ranked.map(({ c, score }, i) => (
+                    <div key={c.id} style={{ marginBottom: i < ranked.length - 1 ? 14 : 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <div>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: C.g9 }}>
+                            {c.nombre}{c.apellidos ? ' ' + c.apellidos : ''}
+                          </span>
+                          {c.grupo && (
+                            <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, background: '#F0F4FF', color: '#1E4DB7', borderRadius: 6, padding: '2px 6px' }}>
+                              {grupoLabel(c.grupo)}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontSize: 17, color: scoreColor(score) }}>
+                          {score}%
+                        </span>
+                      </div>
+                      {c.grupo && (
+                        <div style={{ fontSize: 11, color: C.g5, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {c.grupo}
+                        </div>
+                      )}
+                      <div style={{ height: 5, background: C.g1, borderRadius: 3 }}>
+                        <div style={{ height: '100%', width: `${score}%`, background: scoreColor(score), borderRadius: 3, transition: 'width .4s' }} />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-            <div style={{ background: C.yl, border: `1.5px solid ${C.y}`, borderRadius: 10, padding: 14 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: C.y, marginBottom: 6 }}>⚠️ Alternativa: María G.</div>
-              <div style={{ fontSize: 12.5, color: C.g9 }}>Score 74% — Viable pero con puntos a negociar: presupuesto (-50€), mascota y duración corta. Requiere conversación previa sobre convivencia.</div>
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
     </div>
   );

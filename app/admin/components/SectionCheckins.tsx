@@ -14,6 +14,8 @@ interface Estancia {
   inquilino_id: string | null;
   checkin_completado: boolean | null;
   checkout_completado: boolean | null;
+  dia_pago: number | null;
+  tipo_contrato: string | null;
 }
 
 interface Inquilino {
@@ -108,13 +110,30 @@ function EstanciaModal({
   unidades,
   onClose,
   onSaved,
+  editData,
 }: {
   inquilinos: Inquilino[];
   unidades: Unidad[];
   onClose: () => void;
   onSaved: () => void;
+  editData?: Estancia | null;
 }) {
-  const [form, setForm] = useState<EstanciaForm>(EMPTY_FORM);
+  const isEdit = !!editData;
+  const [form, setForm] = useState<EstanciaForm>(() =>
+    editData
+      ? {
+          inquilino_id: editData.inquilino_id ?? '',
+          unidad_id: editData.unidad_id ?? '',
+          estado: editData.estado ?? 'RESERVA',
+          fecha_entrada: editData.fecha_entrada ?? '',
+          fecha_salida_prevista: editData.fecha_salida_prevista ?? '',
+          renta_mensual: editData.renta_mensual != null ? String(editData.renta_mensual) : '',
+          fianza: editData.fianza != null ? String(editData.fianza) : '',
+          dia_pago: editData.dia_pago != null ? String(editData.dia_pago) : '1',
+          tipo_contrato: editData.tipo_contrato ?? 'coliving',
+        }
+      : EMPTY_FORM
+  );
   const [upsell, setUpsell] = useState<UpsellForm>(EMPTY_UPSELL);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -132,6 +151,28 @@ function EstanciaModal({
     setSaving(true);
     setErr('');
     const sb = createClient();
+
+    if (isEdit && editData) {
+      const payload = {
+        inquilino_id: form.inquilino_id || null,
+        unidad_id: form.unidad_id || null,
+        estado: form.estado,
+        fecha_entrada: form.fecha_entrada,
+        fecha_salida_prevista: form.fecha_salida_prevista || null,
+        renta_mensual: Number(form.renta_mensual),
+        fianza: form.fianza ? Number(form.fianza) : null,
+        dia_pago: form.dia_pago ? Number(form.dia_pago) : 1,
+        tipo_contrato: form.tipo_contrato,
+      };
+      const { error } = await sb.from('estancias').update(payload).eq('id', editData.id);
+      if (error) { setErr(error.message); setSaving(false); return; }
+      if (form.estado === 'ACTIVA' && form.unidad_id) {
+        await sb.from('unidades').update({ estado: 'OCUPADA' }).eq('id', form.unidad_id);
+      }
+      setSaving(false);
+      onSaved();
+      return;
+    }
 
     const id = 'EST_' + Date.now().toString().slice(-8);
     const payload = {
@@ -196,7 +237,7 @@ function EstanciaModal({
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
         <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1E4DB7' }}>🏠 Nueva reserva</h2>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1E4DB7' }}>{isEdit ? '✏️ Editar estancia' : '🏠 Nueva reserva'}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
         </div>
         <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -266,7 +307,7 @@ function EstanciaModal({
           </div>
 
           {/* Servicios y Packs */}
-          <div style={{ background: '#F0F4FF', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {!isEdit && <div style={{ background: '#F0F4FF', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#1E4DB7', marginBottom: 2 }}>⭐ Servicios y Packs</div>
 
             <div>
@@ -310,7 +351,7 @@ function EstanciaModal({
                 ))}
               </div>
             </div>
-          </div>
+          </div>}
 
           {err && <p style={{ margin: 0, color: '#EF4444', fontSize: 12, background: '#FEF2F2', padding: '8px 12px', borderRadius: 8 }}>{err}</p>}
 
@@ -319,7 +360,7 @@ function EstanciaModal({
               Cancelar
             </button>
             <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '11px', background: '#1E4DB7', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-              {saving ? 'Guardando...' : 'Crear estancia'}
+              {saving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear estancia'}
             </button>
           </div>
         </div>
@@ -336,6 +377,7 @@ export default function SectionCheckins() {
   const [dbError, setDbError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
+  const [editEstancia, setEditEstancia] = useState<Estancia | null>(null);
 
   const inqMap: Record<string, Inquilino> = {};
   for (const inq of inquilinos) inqMap[inq.id] = inq;
@@ -348,7 +390,7 @@ export default function SectionCheckins() {
 
     const [estRes, inqRes, uniRes] = await Promise.all([
       sb.from('estancias')
-        .select('id, estado, fecha_entrada, fecha_salida_prevista, renta_mensual, fianza, unidad_id, inquilino_id, checkin_completado, checkout_completado')
+        .select('id, estado, fecha_entrada, fecha_salida_prevista, renta_mensual, fianza, unidad_id, inquilino_id, checkin_completado, checkout_completado, dia_pago, tipo_contrato')
         .order('fecha_entrada', { ascending: false }),
       sb.from('inquilinos')
         .select('id, nombre, apellidos')
@@ -370,6 +412,13 @@ export default function SectionCheckins() {
 
   useEffect(() => { load(); }, []);
 
+  async function eliminarEstancia(id: string) {
+    if (!confirm('¿Seguro que quieres eliminar esta estancia?')) return;
+    const sb = createClient();
+    const { error } = await sb.from('estancias').delete().eq('id', id);
+    if (error) alert(error.message); else load();
+  }
+
   async function handleCheckin(id: string) {
     setCheckingIn(id);
     const sb = createClient();
@@ -384,7 +433,7 @@ export default function SectionCheckins() {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={() => { setEditEstancia(null); setModalOpen(true); }}
           style={{ padding: '8px 18px', background: '#1E4DB7', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
         >
           + Nueva Reserva
@@ -459,7 +508,16 @@ export default function SectionCheckins() {
                           }
                         </td>
                         <td style={{ padding: '10px 12px' }}>
-                          <span style={{ fontSize: 11, color: C.g5 }}>{est.id}</span>
+                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                            <button
+                              onClick={() => { setEditEstancia(est); setModalOpen(true); }}
+                              style={{ background: '#EFF6FF', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#1E4DB7', cursor: 'pointer' }}
+                            >✏️ Editar</button>
+                            <button
+                              onClick={() => eliminarEstancia(est.id)}
+                              style={{ width: 28, height: 28, background: '#FEE2E2', border: 'none', borderRadius: 7, fontSize: 14, color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >✕</button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -475,8 +533,9 @@ export default function SectionCheckins() {
         <EstanciaModal
           inquilinos={inquilinos}
           unidades={unidades}
-          onClose={() => setModalOpen(false)}
-          onSaved={() => { setModalOpen(false); load(); }}
+          editData={editEstancia}
+          onClose={() => { setModalOpen(false); setEditEstancia(null); }}
+          onSaved={() => { setModalOpen(false); setEditEstancia(null); load(); }}
         />
       )}
     </div>

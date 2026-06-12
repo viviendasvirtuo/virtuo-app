@@ -545,11 +545,11 @@ export default function SectionPisos() {
           {pisos.map((p: Propiedad) => {
             const habs = p.habitaciones;
             const total = habs.length > 0 ? habs.length : p.total_habitaciones;
-            const ocp = habs.filter((h: Habitacion) => h.estado === 'ocupada').length;
-            const libres = habs.filter((h: Habitacion) => h.estado === 'libre').length;
+            const ocp = habs.filter((h: Habitacion) => h.estado === 'OCUPADA').length;
+            const libres = habs.filter((h: Habitacion) => h.estado === 'LIBRE').length;
             const pct = total > 0 ? Math.round((ocp / total) * 100) : 0;
             const ingresos = habs
-              .filter((h: Habitacion) => h.estado === 'ocupada')
+              .filter((h: Habitacion) => h.estado === 'OCUPADA')
               .reduce((s: number, h: Habitacion) => s + Number(h.precio_mensual), 0);
             const color = p.color;
 

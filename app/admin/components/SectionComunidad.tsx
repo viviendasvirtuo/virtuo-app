@@ -94,6 +94,8 @@ export default function SectionComunidad() {
   const [saving,      setSaving]      = useState(false);
   const [aForm,       setAForm]       = useState<AForm>(EMPTY_A);
   const [tForm,       setTForm]       = useState<TForm>(EMPTY_T);
+  const [editAnuId,   setEditAnuId]   = useState<string | null>(null);
+  const [editTarId,   setEditTarId]   = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -112,39 +114,90 @@ export default function SectionComunidad() {
 
   useEffect(() => { load(); }, []);
 
-  async function crearAnuncio() {
+  function abrirNuevoAnuncio() {
+    setEditAnuId(null);
+    setAForm(EMPTY_A);
+    setShowAnu(true);
+  }
+
+  function abrirEditarAnuncio(a: AnuncioRow) {
+    setEditAnuId(a.id);
+    setAForm({
+      propiedad_id: a.propiedad_id ?? '',
+      tipo: a.tipo,
+      titulo: a.titulo ?? '',
+      mensaje: a.mensaje ?? '',
+    });
+    setShowAnu(true);
+  }
+
+  function abrirNuevaTarea() {
+    setEditTarId(null);
+    setTForm(EMPTY_T);
+    setShowTar(true);
+  }
+
+  function abrirEditarTarea(t: TareaRow) {
+    setEditTarId(t.id);
+    setTForm({
+      propiedad_id: t.propiedad_id ?? '',
+      tarea: t.tarea ?? '',
+      inquilino_id: t.inquilino_id ?? '',
+      dia_semana: t.dia_semana ?? 'Lunes',
+    });
+    setShowTar(true);
+  }
+
+  async function guardarAnuncio() {
     if (!aForm.titulo.trim() || !aForm.mensaje.trim()) return;
     setSaving(true);
-    await sb.from('anuncios').insert({
-      id: 'ANU_' + Date.now().toString().slice(-8),
-      propiedad_id: aForm.propiedad_id || null,
-      tipo: aForm.tipo, titulo: aForm.titulo, mensaje: aForm.mensaje,
-      fecha: new Date().toISOString(),
-    });
-    setShowAnu(false); setAForm(EMPTY_A);
+    if (editAnuId) {
+      await sb.from('anuncios').update({
+        propiedad_id: aForm.propiedad_id || null,
+        tipo: aForm.tipo, titulo: aForm.titulo, mensaje: aForm.mensaje,
+      }).eq('id', editAnuId);
+    } else {
+      await sb.from('anuncios').insert({
+        id: 'ANU_' + Date.now().toString().slice(-8),
+        propiedad_id: aForm.propiedad_id || null,
+        tipo: aForm.tipo, titulo: aForm.titulo, mensaje: aForm.mensaje,
+        fecha: new Date().toISOString(),
+      });
+    }
+    setShowAnu(false); setAForm(EMPTY_A); setEditAnuId(null);
     await load(); setSaving(false);
   }
 
-  async function crearTarea() {
+  async function guardarTarea() {
     if (!tForm.tarea.trim()) return;
     setSaving(true);
-    await sb.from('tareas_comunidad').insert({
-      id: 'TAR_' + Date.now().toString().slice(-8),
-      propiedad_id: tForm.propiedad_id || null,
-      tarea: tForm.tarea, inquilino_id: tForm.inquilino_id || null,
-      dia_semana: tForm.dia_semana, estado: 'PENDIENTE',
-      fecha_alta: new Date().toISOString(),
-    });
-    setShowTar(false); setTForm(EMPTY_T);
+    if (editTarId) {
+      await sb.from('tareas_comunidad').update({
+        propiedad_id: tForm.propiedad_id || null,
+        tarea: tForm.tarea, inquilino_id: tForm.inquilino_id || null,
+        dia_semana: tForm.dia_semana,
+      }).eq('id', editTarId);
+    } else {
+      await sb.from('tareas_comunidad').insert({
+        id: 'TAR_' + Date.now().toString().slice(-8),
+        propiedad_id: tForm.propiedad_id || null,
+        tarea: tForm.tarea, inquilino_id: tForm.inquilino_id || null,
+        dia_semana: tForm.dia_semana, estado: 'PENDIENTE',
+        fecha_alta: new Date().toISOString(),
+      });
+    }
+    setShowTar(false); setTForm(EMPTY_T); setEditTarId(null);
     await load(); setSaving(false);
   }
 
   async function eliminarAnuncio(id: string) {
+    if (!confirm('¿Seguro que quieres eliminar este anuncio?')) return;
     await sb.from('anuncios').delete().eq('id', id);
     await load();
   }
 
   async function eliminarTarea(id: string) {
+    if (!confirm('¿Seguro que quieres eliminar esta tarea?')) return;
     await sb.from('tareas_comunidad').delete().eq('id', id);
     await load();
   }
@@ -156,10 +209,23 @@ export default function SectionComunidad() {
   }
 
   const btnDel: React.CSSProperties = { background: C.g1, color: C.g5, border: 'none', borderRadius: 6, width: 20, height: 20, fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, lineHeight: 1 };
+  const btnEdit: React.CSSProperties = { ...btnDel };
   const btnP: React.CSSProperties = { background: C.b, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' };
   const btnG: React.CSSProperties = { ...btnP, background: C.g1, color: C.g9 };
   const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 };
   const modal: React.CSSProperties = { background: '#fff', borderRadius: 16, padding: 24, width: '100%', maxWidth: 420, boxShadow: '0 8px 32px rgba(0,0,0,.18)' };
+
+  function hoverEdit(e: React.MouseEvent<HTMLButtonElement>, enter: boolean) {
+    const el = e.currentTarget as HTMLButtonElement;
+    el.style.background = enter ? C.bl : C.g1;
+    el.style.color = enter ? C.b : C.g5;
+  }
+
+  function hoverDel(e: React.MouseEvent<HTMLButtonElement>, enter: boolean) {
+    const el = e.currentTarget as HTMLButtonElement;
+    el.style.background = enter ? C.rl : C.g1;
+    el.style.color = enter ? C.r : C.g5;
+  }
 
   return (
     <div>
@@ -168,7 +234,9 @@ export default function SectionComunidad() {
       {showAnu && (
         <div style={overlay} onClick={() => setShowAnu(false)}>
           <div style={modal} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 16 }}>📢 Nuevo anuncio</div>
+            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
+              📢 {editAnuId ? 'Editar anuncio' : 'Nuevo anuncio'}
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={lbl}>Piso</label>
@@ -194,8 +262,8 @@ export default function SectionComunidad() {
                 <textarea style={{ ...inp, minHeight: 80, resize: 'vertical' }} value={aForm.mensaje} onChange={(e: { target: { value: string } }) => setAForm((f: AForm) => ({ ...f, mensaje: e.target.value }))} placeholder="Escribe el mensaje…" />
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-                <button style={btnG} onClick={() => setShowAnu(false)}>Cancelar</button>
-                <button style={btnP} onClick={crearAnuncio} disabled={saving}>{saving ? 'Guardando…' : 'Publicar'}</button>
+                <button style={btnG} onClick={() => { setShowAnu(false); setEditAnuId(null); }}>Cancelar</button>
+                <button style={btnP} onClick={guardarAnuncio} disabled={saving}>{saving ? 'Guardando…' : editAnuId ? 'Guardar cambios' : 'Publicar'}</button>
               </div>
             </div>
           </div>
@@ -205,7 +273,9 @@ export default function SectionComunidad() {
       {showTar && (
         <div style={overlay} onClick={() => setShowTar(false)}>
           <div style={modal} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 16 }}>🧹 Nueva tarea</div>
+            <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
+              🧹 {editTarId ? 'Editar tarea' : 'Nueva tarea'}
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={lbl}>Piso</label>
@@ -232,8 +302,8 @@ export default function SectionComunidad() {
                 </select>
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-                <button style={btnG} onClick={() => setShowTar(false)}>Cancelar</button>
-                <button style={btnP} onClick={crearTarea} disabled={saving}>{saving ? 'Guardando…' : 'Crear tarea'}</button>
+                <button style={btnG} onClick={() => { setShowTar(false); setEditTarId(null); }}>Cancelar</button>
+                <button style={btnP} onClick={guardarTarea} disabled={saving}>{saving ? 'Guardando…' : editTarId ? 'Guardar cambios' : 'Crear tarea'}</button>
               </div>
             </div>
           </div>
@@ -246,7 +316,7 @@ export default function SectionComunidad() {
           <div style={{ ...card }}>
             <div style={{ ...cardHead, justifyContent: 'space-between' }}>
               <span>📢 Anuncios del piso</span>
-              <button style={btnP} onClick={() => setShowAnu(true)}>+ Nuevo anuncio</button>
+              <button style={btnP} onClick={abrirNuevoAnuncio}>+ Nuevo anuncio</button>
             </div>
             <div style={cardBody}>
               {loading ? (
@@ -264,7 +334,8 @@ export default function SectionComunidad() {
                       <span style={{ fontSize: 16 }}>{icon}</span>
                       <span style={{ fontWeight: 700, fontSize: 13, color: C.g9 }}>{a.titulo}</span>
                       <span style={{ marginLeft: 'auto', fontSize: 10, color: C.g5, whiteSpace: 'nowrap' }}>{fechaRelativa(a.fecha)}</span>
-                      <button style={btnDel} onClick={() => eliminarAnuncio(a.id)} title="Eliminar" onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.rl; (e.currentTarget as HTMLButtonElement).style.color = C.r; }} onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.g1; (e.currentTarget as HTMLButtonElement).style.color = C.g5; }}>✕</button>
+                      <button style={btnEdit} onClick={() => abrirEditarAnuncio(a)} title="Editar" onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => hoverEdit(e, true)} onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => hoverEdit(e, false)}>✏️</button>
+                      <button style={btnDel} onClick={() => eliminarAnuncio(a.id)} title="Eliminar" onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => hoverDel(e, true)} onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => hoverDel(e, false)}>✕</button>
                     </div>
                     <div style={{ fontSize: 12.5, color: C.g9, lineHeight: 1.5 }}>{a.mensaje}</div>
                     {a.propiedades?.[0]?.nombre && (
@@ -282,7 +353,7 @@ export default function SectionComunidad() {
           <div style={card}>
             <div style={{ ...cardHead, justifyContent: 'space-between' }}>
               <span>🧹 Tareas de comunidad</span>
-              <button style={btnP} onClick={() => setShowTar(true)}>+ Nueva tarea</button>
+              <button style={btnP} onClick={abrirNuevaTarea}>+ Nueva tarea</button>
             </div>
             <div style={cardBody}>
               {loading ? (
@@ -307,7 +378,8 @@ export default function SectionComunidad() {
                     <button className="est-badge" style={{ background: completada ? C.gl : C.yl, color: completada ? C.g : C.y }} onClick={() => toggleEstado(t)}>
                       {completada ? 'COMPLETADA' : 'PENDIENTE'}
                     </button>
-                    <button style={btnDel} onClick={() => eliminarTarea(t.id)} title="Eliminar" onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.rl; (e.currentTarget as HTMLButtonElement).style.color = C.r; }} onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.g1; (e.currentTarget as HTMLButtonElement).style.color = C.g5; }}>✕</button>
+                    <button style={btnEdit} onClick={() => abrirEditarTarea(t)} title="Editar" onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => hoverEdit(e, true)} onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => hoverEdit(e, false)}>✏️</button>
+                    <button style={btnDel} onClick={() => eliminarTarea(t.id)} title="Eliminar" onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => hoverDel(e, true)} onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => hoverDel(e, false)}>✕</button>
                   </div>
                 );
               })}

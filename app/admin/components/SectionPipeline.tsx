@@ -258,6 +258,13 @@ export default function SectionPipeline() {
     setModalOpen(true);
   }
 
+  async function eliminarInquilino(id: string) {
+    if (!confirm('¿Eliminar este inquilino?')) return;
+    const sb = createClient();
+    const { error } = await sb.from('inquilinos').delete().eq('id', id);
+    if (error) alert('No se puede eliminar: ' + error.message); else load();
+  }
+
   function handleSaved() {
     setModalOpen(false);
     setEditTarget(null);
@@ -329,10 +336,16 @@ export default function SectionPipeline() {
                         </span>
                       </td>
                       <td style={{ padding: '10px 14px' }}>
-                        <button
-                          onClick={() => openEdit(inq.id)}
-                          style={{ background: '#F0F4FF', border: 'none', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1E4DB7', cursor: 'pointer' }}
-                        >✏️ Editar</button>
+                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                          <button
+                            onClick={() => openEdit(inq.id)}
+                            style={{ background: '#F0F4FF', border: 'none', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1E4DB7', cursor: 'pointer' }}
+                          >✏️ Editar</button>
+                          <button
+                            onClick={() => eliminarInquilino(inq.id)}
+                            style={{ width: 28, height: 28, background: '#FEE2E2', border: 'none', borderRadius: 7, fontSize: 14, color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >✕</button>
+                        </div>
                       </td>
                     </tr>
                   ))

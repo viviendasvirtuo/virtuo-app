@@ -139,12 +139,23 @@ export default function SectionComunidad() {
     await load(); setSaving(false);
   }
 
+  async function eliminarAnuncio(id: string) {
+    await sb.from('anuncios').delete().eq('id', id);
+    await load();
+  }
+
+  async function eliminarTarea(id: string) {
+    await sb.from('tareas_comunidad').delete().eq('id', id);
+    await load();
+  }
+
   async function toggleEstado(t: TareaRow) {
     const nuevo = t.estado === 'COMPLETADA' ? 'PENDIENTE' : 'COMPLETADA';
     await sb.from('tareas_comunidad').update({ estado: nuevo }).eq('id', t.id);
     setTareas((prev: TareaRow[]) => prev.map((x: TareaRow) => x.id === t.id ? { ...x, estado: nuevo } : x));
   }
 
+  const btnDel: React.CSSProperties = { background: C.g1, color: C.g5, border: 'none', borderRadius: 6, width: 20, height: 20, fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, lineHeight: 1 };
   const btnP: React.CSSProperties = { background: C.b, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' };
   const btnG: React.CSSProperties = { ...btnP, background: C.g1, color: C.g9 };
   const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 };
@@ -253,6 +264,7 @@ export default function SectionComunidad() {
                       <span style={{ fontSize: 16 }}>{icon}</span>
                       <span style={{ fontWeight: 700, fontSize: 13, color: C.g9 }}>{a.titulo}</span>
                       <span style={{ marginLeft: 'auto', fontSize: 10, color: C.g5, whiteSpace: 'nowrap' }}>{fechaRelativa(a.fecha)}</span>
+                      <button style={btnDel} onClick={() => eliminarAnuncio(a.id)} title="Eliminar" onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.rl; (e.currentTarget as HTMLButtonElement).style.color = C.r; }} onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.g1; (e.currentTarget as HTMLButtonElement).style.color = C.g5; }}>✕</button>
                     </div>
                     <div style={{ fontSize: 12.5, color: C.g9, lineHeight: 1.5 }}>{a.mensaje}</div>
                     {a.propiedades?.[0]?.nombre && (
@@ -295,6 +307,7 @@ export default function SectionComunidad() {
                     <button className="est-badge" style={{ background: completada ? C.gl : C.yl, color: completada ? C.g : C.y }} onClick={() => toggleEstado(t)}>
                       {completada ? 'COMPLETADA' : 'PENDIENTE'}
                     </button>
+                    <button style={btnDel} onClick={() => eliminarTarea(t.id)} title="Eliminar" onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.rl; (e.currentTarget as HTMLButtonElement).style.color = C.r; }} onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { (e.currentTarget as HTMLButtonElement).style.background = C.g1; (e.currentTarget as HTMLButtonElement).style.color = C.g5; }}>✕</button>
                   </div>
                 );
               })}

@@ -27,6 +27,7 @@ interface Inquilino {
 interface Unidad {
   id: string;
   nombre: string;
+  estado: string | null;
   propiedad_id: string | null;
   propiedades: { nombre: string } | null;
 }
@@ -244,8 +245,11 @@ function EstanciaModal({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={lbl}>Inquilino</label>
-              <select style={inp} value={form.inquilino_id} onChange={(e: { target: { value: string } }) => set('inquilino_id', e.target.value)}>
-                <option value="">— Sin asignar —</option>
+              <select style={inp} value={form.inquilino_id} onChange={(e: { target: { value: string } }) => set('inquilino_id', e.target.value)} disabled={!isEdit && inquilinos.length === 0}>
+                {!isEdit && inquilinos.length === 0
+                  ? <option value="">— No hay inquilinos disponibles —</option>
+                  : <option value="">— Sin asignar —</option>
+                }
                 {inquilinos.map((inq: Inquilino) => (
                   <option key={inq.id} value={inq.id}>
                     {inq.nombre}{inq.apellidos ? ' ' + inq.apellidos : ''}
@@ -396,7 +400,7 @@ export default function SectionCheckins() {
         .select('id, nombre, apellidos')
         .order('nombre'),
       sb.from('unidades')
-        .select('id, nombre, propiedad_id, propiedades(nombre)')
+        .select('id, nombre, estado, propiedad_id, propiedades(nombre)')
         .or('estado.eq.LIBRE,estado.eq.OCUPADA')
         .order('nombre'),
     ]);
@@ -426,6 +430,15 @@ export default function SectionCheckins() {
     setCheckingIn(null);
     load();
   }
+
+  const ocupadosIds = new Set(
+    estancias
+      .filter((e: Estancia) => ['ACTIVA', 'CONTRATO', 'RESERVA'].includes(e.estado ?? ''))
+      .map((e: Estancia) => e.inquilino_id)
+      .filter(Boolean) as string[]
+  );
+  const inquilinosDisponibles = inquilinos.filter((i: Inquilino) => !ocupadosIds.has(i.id));
+  const unidadesLibres = unidades.filter((u: Unidad) => u.estado === 'LIBRE');
 
   return (
     <div>
@@ -531,8 +544,8 @@ export default function SectionCheckins() {
 
       {modalOpen && (
         <EstanciaModal
-          inquilinos={inquilinos}
-          unidades={unidades}
+          inquilinos={editEstancia ? inquilinos : inquilinosDisponibles}
+          unidades={editEstancia ? unidades : unidadesLibres}
           editData={editEstancia}
           onClose={() => { setModalOpen(false); setEditEstancia(null); }}
           onSaved={() => { setModalOpen(false); setEditEstancia(null); load(); }}

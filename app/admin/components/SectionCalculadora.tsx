@@ -133,15 +133,20 @@ export default function SectionCalculadora() {
           <div style={cardHead}>📈 Proyección 12 meses</div>
           <div style={{ padding: '14px 16px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
-              {months.map((m, i) => {
-                const h = Math.max(4, ((calc.beneficio > 0 ? 1 : 0) * 70) + (Math.random() * 10 - 5));
-                return (
-                  <div key={m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <div style={{ width: '100%', background: calc.beneficio >= 0 ? C.g : C.r, borderRadius: '3px 3px 0 0', height: `${h}px`, opacity: 0.7 + (i / months.length) * 0.3 }} />
-                    <span style={{ fontSize: 8, color: C.g5 }}>{m}</span>
-                  </div>
-                );
-              })}
+              {(() => {
+                const estacionalidad = [0.85, 0.85, 0.9, 0.95, 1.0, 1.05, 1.0, 0.9, 1.0, 1.1, 1.05, 1.1];
+                const SCALE = 30;
+                return months.map((m, i) => {
+                  const valorMes = calc.beneficio * estacionalidad[i];
+                  const h = Math.max(4, Math.min(80, Math.abs(valorMes) / SCALE));
+                  return (
+                    <div key={m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <div style={{ width: '100%', background: calc.beneficio >= 0 ? C.g : C.r, borderRadius: '3px 3px 0 0', height: `${h}px`, opacity: 0.7 + (i / months.length) * 0.3 }} />
+                      <span style={{ fontSize: 8, color: C.g5 }}>{m}</span>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>

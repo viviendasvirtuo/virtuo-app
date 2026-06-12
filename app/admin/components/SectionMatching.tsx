@@ -53,11 +53,9 @@ export default function SectionMatching() {
         const sb = createClient();
         const [r1, r2, r3] = await Promise.all([
           sb.from('unidades').select('id, nombre, propiedad_id, precio_actual, propiedades(nombre)').eq('estado', 'LIBRE'),
-          sb.from('estancias').select('inquilino_id, unidades(propiedad_id), inquilinos(nombre)').eq('estado', 'ACTIVA'),
+          sb.from('estancias').select('inquilino_id, unidades(propiedad_id), inquilinos(grupo_simplificado)').eq('estado', 'ACTIVA'),
           sb.from('inquilinos').select('id, nombre, apellidos, grupo, grupo_simplificado, score_inquilino, blacklist'),
         ]);
-        console.log('DEBUG inquilinosActivos:', JSON.stringify(r2.data, null, 2));
-        console.log('DEBUG unidadesLibres:', JSON.stringify(r1.data, null, 2));
         setUnidades((r1.data ?? []) as unknown as UnidadLibre[]);
         setEstancias((r2.data ?? []) as unknown as EstanciaActiva[]);
         setCandidatos((r3.data ?? []) as Candidato[]);

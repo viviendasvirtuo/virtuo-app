@@ -14,7 +14,7 @@ interface AnuncioRow {
   titulo: string | null;
   mensaje: string | null;
   fecha: string | null;
-  propiedades?: { nombre: string } | null;
+  propiedades?: { nombre: string }[] | null;
 }
 
 interface TareaRow {
@@ -24,8 +24,8 @@ interface TareaRow {
   inquilino_id: string | null;
   dia_semana: string | null;
   estado: string | null;
-  inquilinos?: { nombre: string } | null;
-  propiedades?: { nombre: string } | null;
+  inquilinos?: { nombre: string }[] | null;
+  propiedades?: { nombre: string }[] | null;
 }
 
 interface AForm { propiedad_id: string; tipo: string; titulo: string; mensaje: string; }
@@ -255,8 +255,8 @@ export default function SectionComunidad() {
                       <span style={{ marginLeft: 'auto', fontSize: 10, color: C.g5, whiteSpace: 'nowrap' }}>{fechaRelativa(a.fecha)}</span>
                     </div>
                     <div style={{ fontSize: 12.5, color: C.g9, lineHeight: 1.5 }}>{a.mensaje}</div>
-                    {a.propiedades?.nombre && (
-                      <div style={{ marginTop: 5, fontSize: 11, color: C.g5 }}>🏠 {a.propiedades.nombre}</div>
+                    {a.propiedades?.[0]?.nombre && (
+                      <div style={{ marginTop: 5, fontSize: 11, color: C.g5 }}>🏠 {a.propiedades[0].nombre}</div>
                     )}
                   </div>
                 );
@@ -282,7 +282,7 @@ export default function SectionComunidad() {
                 </div>
               ) : tareas.map((t: TareaRow, i: number) => {
                 const completada = t.estado === 'COMPLETADA';
-                const nombre = t.inquilinos?.nombre ?? null;
+                const nombre = t.inquilinos?.[0]?.nombre ?? null;
                 return (
                   <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < tareas.length - 1 ? `1px solid ${C.g1}` : 'none' }}>
                     <div style={{ width: 30, height: 30, borderRadius: '50%', background: avatarColor(t.inquilino_id), color: '#fff', fontWeight: 700, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

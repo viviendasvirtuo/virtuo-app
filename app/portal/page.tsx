@@ -3,6 +3,15 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+interface WikiPiso {
+  wifi_red?: string;
+  wifi_password?: string;
+  termostato?: string;
+  lavadora?: string;
+  basura?: string;
+  otros?: string;
+}
+
 interface Estancia {
   id: string;
   renta_mensual: number;
@@ -22,6 +31,7 @@ interface Estancia {
       nombre: string;
       wifi_nombre: string;
       wifi_password: string;
+      wiki_piso: WikiPiso | null;
     };
   };
 }
@@ -110,6 +120,7 @@ export default function PortalPage() {
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
 
+  const [wikiAbierto, setWikiAbierto] = useState<string | null>(null);
   const [mostrarFormInc, setMostrarFormInc] = useState(false);
   const [incTipo, setIncTipo] = useState('');
   const [incDesc, setIncDesc] = useState('');
@@ -127,7 +138,7 @@ export default function PortalPage() {
 
     const { data: estanciaData, error: estanciaError } = await sb
       .from('estancias')
-      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password))')
+      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password, wiki_piso))')
       .eq('unidad_id', codigo.trim().toUpperCase())
       .eq('estado', 'ACTIVA')
       .single();
@@ -289,6 +300,62 @@ export default function PortalPage() {
           <h1 style={{ margin: '0 0 6px', fontSize: '22px', fontWeight: '800', lineHeight: 1.2 }}>{inq.nombre} {inq.apellidos}</h1>
           <p style={{ margin: 0, fontSize: '13px', opacity: 0.85, fontWeight: '500' }}>{prop.nombre} &nbsp;·&nbsp; {uni.nombre}</p>
         </div>
+
+        {/* ── Wiki del piso ── */}
+        {(() => {
+          const wiki = prop.wiki_piso;
+          const items: { key: keyof WikiPiso; icon: string; titulo: string }[] = [
+            { key: 'wifi_red',    icon: '📡', titulo: 'WiFi' },
+            { key: 'termostato', icon: '🌡️', titulo: 'Termostato / Calefacción' },
+            { key: 'lavadora',   icon: '🧺', titulo: 'Lavadora' },
+            { key: 'basura',     icon: '🗑️', titulo: 'Recogida de basura' },
+            { key: 'otros',      icon: 'ℹ️', titulo: 'Otros' },
+          ];
+          const visibles = wiki ? items.filter(it => wiki[it.key]?.trim()) : [];
+
+          return (
+            <div style={{ ...card, marginBottom: '14px' }}>
+              <div style={{ ...cardHead }}>📖 Guía del piso</div>
+              <div style={{ padding: '12px 20px' }}>
+                {!wiki || visibles.length === 0 ? (
+                  <p style={{ margin: 0, fontSize: '13px', color: C.gray400 }}>
+                    La guía del piso aún no está disponible.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {visibles.map(({ key, icon, titulo }) => {
+                      const abierto = wikiAbierto === key;
+                      return (
+                        <div key={key} style={{ border: `1px solid ${C.border}`, borderRadius: '10px', overflow: 'hidden' }}>
+                          <button
+                            onClick={() => setWikiAbierto(abierto ? null : key)}
+                            style={{
+                              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              padding: '11px 14px', background: abierto ? C.bg : C.white,
+                              border: 'none', cursor: 'pointer', fontFamily: FONT, textAlign: 'left',
+                            }}
+                          >
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600', color: C.gray900 }}>
+                              <span>{icon}</span>{titulo}
+                            </span>
+                            <span style={{ fontSize: '12px', color: C.gray400, flexShrink: 0 }}>{abierto ? '▲' : '▼'}</span>
+                          </button>
+                          {abierto && (
+                            <div style={{ padding: '10px 14px 13px', borderTop: `1px solid ${C.border}`, background: C.white }}>
+                              <p style={{ margin: 0, fontSize: '13px', color: C.gray700, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                                {wiki[key]}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Tu estancia ── */}
         <div style={card}>

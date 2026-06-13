@@ -54,6 +54,11 @@ interface Incidencia {
   fecha_reporte: string;
 }
 
+// ── Códigos de acceso cortos → unidad_id ───────────────────────
+const codigosAcceso: Record<string, string> = {
+  // '123456': 'UNIT_SANTS_HAB1',
+};
+
 // ── Design tokens ──────────────────────────────────────────────
 const C = {
   primary:   '#1E4DB7',
@@ -136,15 +141,18 @@ export default function PortalPage() {
     setLoading(true);
     setError('');
 
+    const raw = codigo.trim();
+    const unidadId = codigosAcceso[raw] ?? raw.toUpperCase();
+
     const { data: estanciaData, error: estanciaError } = await sb
       .from('estancias')
       .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password, wiki_piso))')
-      .eq('unidad_id', codigo.trim().toUpperCase())
+      .eq('unidad_id', unidadId)
       .eq('estado', 'ACTIVA')
       .single();
 
     if (estanciaError || !estanciaData) {
-      setError('Código de habitación no encontrado. Comprueba que es correcto.');
+      setError('Código de acceso no válido. Comprueba que es correcto.');
       setLoading(false);
       return;
     }
@@ -163,7 +171,7 @@ export default function PortalPage() {
     const { data: incidenciasData } = await sb
       .from('incidencias')
       .select('id, tipo, descripcion, prioridad, estado, fecha_reporte')
-      .eq('unidad_id', codigo.trim().toUpperCase())
+      .eq('unidad_id', unidadId)
       .order('fecha_reporte', { ascending: false })
       .limit(5);
 
@@ -181,11 +189,12 @@ export default function PortalPage() {
     setIncError('');
 
     const incId = 'INC_' + Date.now().toString().slice(-8);
+    const unidadId = codigosAcceso[codigo.trim()] ?? codigo.trim().toUpperCase();
 
     const { error: insertError } = await sb.from('incidencias').insert({
       id: incId,
       propiedad_id: estancia.unidades.propiedad_id,
-      unidad_id: codigo.trim().toUpperCase(),
+      unidad_id: unidadId,
       estancia_id: estancia.id,
       reportado_por: estancia.inquilinos.id,
       tipo: incTipo,
@@ -205,7 +214,7 @@ export default function PortalPage() {
     const { data: inc2 } = await sb
       .from('incidencias')
       .select('id, tipo, descripcion, prioridad, estado, fecha_reporte')
-      .eq('unidad_id', codigo.trim().toUpperCase())
+      .eq('unidad_id', unidadId)
       .order('fecha_reporte', { ascending: false })
       .limit(5);
     setIncidencias((inc2 as Incidencia[]) || []);
@@ -232,14 +241,14 @@ export default function PortalPage() {
 
           <div style={{ marginBottom: '16px' }}>
             <label style={{ ...label, textTransform: 'none', fontSize: '13px', letterSpacing: 0 }}>
-              Código de habitación
+              Código de acceso
             </label>
             <input
               type="text"
               value={codigo}
               onChange={(e) => setCodigo(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              placeholder="Ej: UNIT_SANTS_HAB1"
+              placeholder="Código de acceso"
               style={{ width: '100%', padding: '13px 16px', border: `2px solid ${C.border}`, borderRadius: '10px', fontSize: '15px', outline: 'none', boxSizing: 'border-box', fontFamily: FONT, color: C.gray900 }}
             />
           </div>

@@ -294,7 +294,7 @@ export default function PortalPage() {
 
   return (
     <main style={{ minHeight: '100vh', background: C.bg, padding: '20px 16px 40px', fontFamily: FONT }}>
-      <div className="max-w-6xl mx-auto" style={{ padding: '0 4px' }}>
+      <div className="max-w-7xl mx-auto" style={{ padding: '0 4px' }}>
 
         {/* ── Header bienvenida ── */}
         <div style={{
@@ -311,7 +311,7 @@ export default function PortalPage() {
         </div>
 
         {/* ── Grid 2 columnas: Guía + Estancia + Pagos ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style={{ alignItems: 'start', marginBottom: '14px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr] gap-4" style={{ alignItems: 'start', marginBottom: '14px' }}>
 
         {/* ── Wiki del piso ── */}
         {(() => {
@@ -334,7 +334,7 @@ export default function PortalPage() {
                     La guía del piso aún no está disponible.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
                     {visibles.map(({ key, icon, titulo }) => {
                       const abierto = wikiAbierto === key;
                       return (

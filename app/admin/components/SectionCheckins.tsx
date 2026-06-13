@@ -10,6 +10,9 @@ interface Estancia {
   fecha_salida_prevista: string | null;
   renta_mensual: number | null;
   fianza: number | null;
+  fianza_devuelta: boolean | null;
+  fianza_devuelta_fecha: string | null;
+  fianza_retencion_motivo: string | null;
   unidad_id: string | null;
   inquilino_id: string | null;
   checkin_completado: boolean | null;
@@ -399,19 +402,20 @@ function BajaModal({
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
-  const canConfirm = form.fianza_devuelta && !!form.fianza_devuelta_fecha;
-
   async function handleConfirmar() {
     setSaving(true);
     setErr('');
     const sb = createClient();
-    const { error } = await sb.from('estancias').update({
+    const update: Record<string, unknown> = {
       estado: 'FINALIZADA',
       fecha_salida_real: form.fecha_salida_real || null,
       checkout_completado: form.checkout_completado,
-      fianza_devuelta: true,
-      fianza_devuelta_fecha: form.fianza_devuelta_fecha,
-    }).eq('id', estancia.id);
+    };
+    if (form.fianza_devuelta) {
+      update.fianza_devuelta = true;
+      update.fianza_devuelta_fecha = form.fianza_devuelta_fecha;
+    }
+    const { error } = await sb.from('estancias').update(update).eq('id', estancia.id);
     if (error) { setErr(error.message); setSaving(false); return; }
     if (estancia.unidad_id) {
       await sb.from('unidades').update({ estado: 'LIBRE' }).eq('id', estancia.unidad_id);
@@ -438,22 +442,92 @@ function BajaModal({
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer', fontWeight: form.fianza_devuelta ? 700 : 400 }}>
             <input type="checkbox" checked={form.fianza_devuelta} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, fianza_devuelta: e.target.checked }))} />
-            Fianza devuelta *
+            Marcar fianza como devuelta ahora (opcional)
           </label>
           {form.fianza_devuelta && (
             <div>
-              <label style={lbl}>Fecha devolución fianza *</label>
+              <label style={lbl}>Fecha devolución fianza</label>
               <input style={inp} type="date" value={form.fianza_devuelta_fecha} onChange={(e: { target: { value: string } }) => setForm(f => ({ ...f, fianza_devuelta_fecha: e.target.value }))} />
             </div>
           )}
+          <p style={{ margin: 0, color: '#6B7280', fontSize: 12 }}>Si la fianza no se devuelve ahora, podrás gestionarla después con &quot;Marcar fianza devuelta&quot;.</p>
           {err && <p style={{ margin: 0, color: '#EF4444', fontSize: 12, background: '#FEF2F2', padding: '8px 12px', borderRadius: 8 }}>{err}</p>}
-          {!canConfirm && <p style={{ margin: 0, color: '#6B7280', fontSize: 12 }}>Marca &quot;Fianza devuelta&quot; y añade la fecha para confirmar.</p>}
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'white', border: '1.5px solid #E2E6EF', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B7280' }}>
               Cancelar
             </button>
-            <button onClick={handleConfirmar} disabled={saving || !canConfirm} style={{ flex: 2, padding: '11px', background: canConfirm ? '#EF4444' : '#F3F4F6', color: canConfirm ? 'white' : '#9CA3AF', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: canConfirm ? 'pointer' : 'default' }}>
+            <button onClick={handleConfirmar} disabled={saving} style={{ flex: 2, padding: '11px', background: '#EF4444', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
               {saving ? 'Procesando...' : 'Confirmar baja'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DevolucionFianzaModal({
+  estancia,
+  onClose,
+  onSaved,
+}: {
+  estancia: Estancia;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [fecha, setFecha] = useState(today);
+  const [motivo, setMotivo] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function handleConfirmar() {
+    setSaving(true);
+    setErr('');
+    const sb = createClient();
+    const { error } = await sb.from('estancias').update({
+      fianza_devuelta: true,
+      fianza_devuelta_fecha: fecha,
+      ...(motivo.trim() ? { fianza_retencion_motivo: motivo.trim() } : {}),
+    }).eq('id', estancia.id);
+    if (error) { setErr(error.message); setSaving(false); return; }
+    setSaving(false);
+    onSaved();
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 420, boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
+        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1E4DB7' }}>💰 Marcar fianza devuelta</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {estancia.fianza != null && (
+            <p style={{ margin: 0, fontSize: 13, color: '#374151' }}>
+              Fianza: <strong>{estancia.fianza}€</strong>
+            </p>
+          )}
+          <div>
+            <label style={lbl}>Fecha de devolución *</label>
+            <input style={inp} type="date" value={fecha} onChange={(e: { target: { value: string } }) => setFecha(e.target.value)} />
+          </div>
+          <div>
+            <label style={lbl}>Motivo de retención / descuento (opcional)</label>
+            <textarea
+              style={{ ...inp, minHeight: 72, resize: 'vertical' }}
+              value={motivo}
+              onChange={(e: { target: { value: string } }) => setMotivo(e.target.value)}
+              placeholder="Ej: Descuento de 50€ por daño en pared..."
+            />
+          </div>
+          {err && <p style={{ margin: 0, color: '#EF4444', fontSize: 12, background: '#FEF2F2', padding: '8px 12px', borderRadius: 8 }}>{err}</p>}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'white', border: '1.5px solid #E2E6EF', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#6B7280' }}>
+              Cancelar
+            </button>
+            <button onClick={handleConfirmar} disabled={saving || !fecha} style={{ flex: 2, padding: '11px', background: '#27AE60', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              {saving ? 'Guardando...' : 'Confirmar devolución'}
             </button>
           </div>
         </div>
@@ -472,6 +546,7 @@ export default function SectionCheckins() {
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
   const [editEstancia, setEditEstancia] = useState<Estancia | null>(null);
   const [bajaEstancia, setBajaEstancia] = useState<Estancia | null>(null);
+  const [devolucionFianzaEstancia, setDevolucionFianzaEstancia] = useState<Estancia | null>(null);
 
   const inqMap: Record<string, Inquilino> = {};
   for (const inq of inquilinos) inqMap[inq.id] = inq;
@@ -484,7 +559,7 @@ export default function SectionCheckins() {
 
     const [estRes, inqRes, uniRes] = await Promise.all([
       sb.from('estancias')
-        .select('id, estado, fecha_entrada, fecha_salida_prevista, renta_mensual, fianza, unidad_id, inquilino_id, checkin_completado, checkout_completado, dia_pago, tipo_contrato')
+        .select('id, estado, fecha_entrada, fecha_salida_prevista, renta_mensual, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, unidad_id, inquilino_id, checkin_completado, checkout_completado, dia_pago, tipo_contrato')
         .order('fecha_entrada', { ascending: false }),
       sb.from('inquilinos')
         .select('id, nombre, apellidos')
@@ -607,9 +682,21 @@ export default function SectionCheckins() {
                           {est.renta_mensual != null ? est.renta_mensual.toLocaleString() + '€' : '—'}
                         </td>
                         <td style={{ padding: '10px 12px' }}>
-                          <span style={{ background: estStyle.bg, color: estStyle.color, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6 }}>
-                            {est.estado ?? '—'}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                            <span style={{ background: estStyle.bg, color: estStyle.color, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6 }}>
+                              {est.estado ?? '—'}
+                            </span>
+                            {est.estado === 'FINALIZADA' && est.fianza_devuelta !== true && (
+                              <span style={{ background: '#FEF3C7', color: '#B45309', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}>
+                                ⚠️ Fianza pendiente
+                              </span>
+                            )}
+                            {est.estado === 'FINALIZADA' && est.fianza_devuelta === true && (
+                              <span style={{ background: '#D1FAE5', color: '#27AE60', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}>
+                                ✓ Fianza devuelta
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td style={{ padding: '10px 12px' }}>
                           {est.checkin_completado
@@ -636,6 +723,12 @@ export default function SectionCheckins() {
                                 onClick={() => abrirBaja(est)}
                                 style={{ background: '#FEF3C7', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#B45309', cursor: 'pointer' }}
                               >🚪 Dar de baja</button>
+                            )}
+                            {est.estado === 'FINALIZADA' && est.fianza_devuelta !== true && (
+                              <button
+                                onClick={() => setDevolucionFianzaEstancia(est)}
+                                style={{ background: '#D1FAE5', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#27AE60', cursor: 'pointer' }}
+                              >💰 Marcar fianza devuelta</button>
                             )}
                             <button
                               onClick={() => eliminarEstancia(est.id)}
@@ -668,6 +761,14 @@ export default function SectionCheckins() {
           estancia={bajaEstancia}
           onClose={() => setBajaEstancia(null)}
           onSaved={() => { setBajaEstancia(null); load(); }}
+        />
+      )}
+
+      {devolucionFianzaEstancia && (
+        <DevolucionFianzaModal
+          estancia={devolucionFianzaEstancia}
+          onClose={() => setDevolucionFianzaEstancia(null)}
+          onSaved={() => { setDevolucionFianzaEstancia(null); load(); }}
         />
       )}
     </div>

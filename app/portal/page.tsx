@@ -17,6 +17,11 @@ interface Estancia {
   renta_mensual: number;
   fecha_entrada: string;
   fecha_salida_prevista: string;
+  fianza: number | null;
+  fianza_devuelta: boolean | null;
+  fianza_devuelta_fecha: string | null;
+  fianza_retencion_motivo: string | null;
+  checkout_completado: boolean | null;
   inquilinos: {
     id: string;
     nombre: string;
@@ -148,7 +153,7 @@ export default function PortalPage() {
 
     const { data: estanciaData, error: estanciaError } = await sb
       .from('estancias')
-      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password, wiki_piso))')
+      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, checkout_completado, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password, wiki_piso))')
       .eq('unidad_id', unidadId)
       .eq('estado', 'ACTIVA')
       .single();
@@ -476,6 +481,42 @@ export default function PortalPage() {
             )}
           </div>
         </div>
+
+        {/* ── Fianza ── */}
+        {estancia.fianza != null && (
+          <div style={card}>
+            <div style={cardHead}>🔐 Fianza</div>
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <p style={label}>Importe</p>
+                <p style={{ ...value, color: C.primary }}>{estancia.fianza}€</p>
+              </div>
+              <div>
+                <p style={label}>Estado</p>
+                {estancia.fianza_devuelta === true ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: '#D1FAE5', color: C.green, fontSize: 12, fontWeight: 700, borderRadius: 20 }}>
+                    ✓ Devuelta{estancia.fianza_devuelta_fecha ? ' · ' + new Date(estancia.fianza_devuelta_fecha).toLocaleDateString('es-ES') : ''}
+                  </span>
+                ) : estancia.checkout_completado ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: '#FEF3C7', color: '#B45309', fontSize: 12, fontWeight: 700, borderRadius: 20 }}>
+                    ⏳ Pendiente de devolución
+                  </span>
+                ) : (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: '#EFF6FF', color: C.primary, fontSize: 12, fontWeight: 700, borderRadius: 20 }}>
+                    🔒 En garantía
+                  </span>
+                )}
+              </div>
+              {estancia.fianza_retencion_motivo && (
+                <div style={{ padding: '10px 12px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8 }}>
+                  <p style={{ margin: 0, fontSize: 12, color: '#92400E' }}>
+                    <strong>Nota:</strong> {estancia.fianza_retencion_motivo}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         </div>{/* fin grid 2 columnas */}
 

@@ -50,6 +50,8 @@ interface Pago {
   fecha_pago: string | null;
 }
 
+interface DocRow { tipo: string; nombre: string; fecha: string; }
+
 interface Incidencia {
   id: string;
   tipo: string;
@@ -131,6 +133,11 @@ export default function PortalPage() {
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
 
   const [wikiAbierto, setWikiAbierto] = useState<string | null>(null);
+
+  // ── Documentos ──────────────────────────────────────────────
+  const [docsExistentes, setDocsExistentes] = useState<DocRow[]>([]);
+  const [docSubiendo, setDocSubiendo] = useState<Record<string, boolean>>({});
+  const [docReemplazar, setDocReemplazar] = useState<Record<string, boolean>>({});
   const [mostrarFormInc, setMostrarFormInc] = useState(false);
   const [incTipo, setIncTipo] = useState('');
   const [incDesc, setIncDesc] = useState('');
@@ -183,6 +190,13 @@ export default function PortalPage() {
       .limit(5);
 
     setIncidencias((incidenciasData as Incidencia[]) || []);
+
+    const { data: docsData } = await sb
+      .from('documentos')
+      .select('tipo, nombre, fecha')
+      .eq('estancia_id', estanciaData.id);
+    setDocsExistentes((docsData as DocRow[]) || []);
+
     setLoading(false);
   }
 
@@ -261,6 +275,36 @@ export default function PortalPage() {
     setIncExito(true);
     setMostrarFormInc(false);
     setTimeout(() => setIncExito(false), 5000);
+  }
+
+  async function handleSubirDocumento(tipo: string, archivo: File) {
+    if (!estancia) return;
+    setDocSubiendo(s => ({ ...s, [tipo]: true }));
+    const unidadId = codigosAcceso[codigo.trim()] ?? codigo.trim().toUpperCase();
+    const ts = Date.now();
+    const safeName = archivo.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${unidadId}/${tipo}_${ts}_${safeName}`;
+    const { error: uploadError } = await sb.storage
+      .from('documentos')
+      .upload(storagePath, archivo, { upsert: false });
+    if (uploadError) {
+      alert('Error al subir: ' + uploadError.message);
+      setDocSubiendo(s => ({ ...s, [tipo]: false }));
+      return;
+    }
+    await sb.from('documentos').upsert({
+      id: `DOC_${tipo}_${estancia.id}`,
+      inquilino_id: estancia.inquilinos.id,
+      estancia_id: estancia.id,
+      tipo,
+      nombre: archivo.name,
+      url: storagePath,
+      fecha: new Date().toISOString().slice(0, 10),
+    }, { onConflict: 'id' });
+    const { data: docsData } = await sb.from('documentos').select('tipo, nombre, fecha').eq('estancia_id', estancia.id);
+    setDocsExistentes((docsData as DocRow[]) || []);
+    setDocSubiendo(s => ({ ...s, [tipo]: false }));
+    setDocReemplazar(r => ({ ...r, [tipo]: false }));
   }
 
   // ── Login screen ────────────────────────────────────────────
@@ -660,6 +704,67 @@ export default function PortalPage() {
             )}
           </div>
         </div>
+
+        {/* ── Mis documentos ── */}
+        {(() => {
+          const TIPOS: { tipo: string; label: string; icon: string }[] = [
+            { tipo: 'dni',              label: 'DNI / NIE / Pasaporte',              icon: '🪪' },
+            { tipo: 'contrato_trabajo', label: 'Contrato de trabajo / Matrícula',    icon: '📄' },
+            { tipo: 'normas_firmadas',  label: 'Normas de convivencia firmadas',     icon: '✍️' },
+          ];
+          return (
+            <div style={{ ...card, marginBottom: '14px' }}>
+              <div style={cardHead}>📁 Mis documentos</div>
+              <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {TIPOS.map(({ tipo, label, icon }) => {
+                  const existente = docsExistentes.find(d => d.tipo === tipo);
+                  const subiendo = docSubiendo[tipo] ?? false;
+                  const reemplazar = docReemplazar[tipo] ?? false;
+                  const mostrarInput = !existente || reemplazar;
+                  return (
+                    <div key={tipo} style={{ padding: '12px 14px', border: `1px solid ${C.border}`, borderRadius: 10, background: existente && !reemplazar ? '#F0FDF4' : C.gray50 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: mostrarInput ? 10 : 0 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: C.gray900, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>{icon}</span>{label}
+                        </span>
+                        {existente && !reemplazar && (
+                          <button
+                            onClick={() => setDocReemplazar(r => ({ ...r, [tipo]: true }))}
+                            style={{ fontSize: 11, fontWeight: 700, color: C.primary, background: '#EFF6FF', border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontFamily: FONT }}
+                          >Reemplazar</button>
+                        )}
+                      </div>
+                      {existente && !reemplazar ? (
+                        <p style={{ margin: 0, fontSize: 12, color: '#15803D', fontWeight: 600 }}>
+                          ✓ Subido el {new Date(existente.fecha).toLocaleDateString('es-ES')} · <span style={{ fontWeight: 400, color: C.gray500 }}>{existente.nombre}</span>
+                        </p>
+                      ) : (
+                        <label style={{
+                          display: 'flex', alignItems: 'center', gap: 10, cursor: subiendo ? 'not-allowed' : 'pointer',
+                          padding: '9px 12px', border: `2px dashed ${C.border}`, borderRadius: 8,
+                          background: C.white, fontSize: 13, color: subiendo ? C.gray400 : C.gray500,
+                        }}>
+                          <span style={{ fontSize: 18 }}>{subiendo ? '⏳' : '📎'}</span>
+                          <span>{subiendo ? 'Subiendo...' : 'Toca para adjuntar (PDF o imagen)'}</span>
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            disabled={subiendo}
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleSubirDocumento(tipo, f);
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Cerrar sesión ── */}
         <button

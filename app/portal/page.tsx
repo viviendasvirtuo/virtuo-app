@@ -138,6 +138,8 @@ export default function PortalPage() {
   const [docsExistentes, setDocsExistentes] = useState<DocRow[]>([]);
   const [docSubiendo, setDocSubiendo] = useState<Record<string, boolean>>({});
   const [docReemplazar, setDocReemplazar] = useState<Record<string, boolean>>({});
+  const [docError, setDocError] = useState<Record<string, string>>({});
+  const [docExito, setDocExito] = useState<Record<string, boolean>>({});
   const [mostrarFormInc, setMostrarFormInc] = useState(false);
   const [incTipo, setIncTipo] = useState('');
   const [incDesc, setIncDesc] = useState('');
@@ -280,31 +282,55 @@ export default function PortalPage() {
   async function handleSubirDocumento(tipo: string, archivo: File) {
     if (!estancia) return;
     setDocSubiendo(s => ({ ...s, [tipo]: true }));
+    setDocError(e => ({ ...e, [tipo]: '' }));
+    setDocExito(x => ({ ...x, [tipo]: false }));
     const unidadId = codigosAcceso[codigo.trim()] ?? codigo.trim().toUpperCase();
     const ts = Date.now();
     const safeName = archivo.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const storagePath = `${unidadId}/${tipo}_${ts}_${safeName}`;
-    const { error: uploadError } = await sb.storage
-      .from('documentos')
-      .upload(storagePath, archivo, { upsert: false });
-    if (uploadError) {
-      alert('Error al subir: ' + uploadError.message);
+    try {
+      console.log(`[docs] Subiendo a Storage: ${storagePath}`);
+      const { error: uploadError } = await sb.storage
+        .from('documentos')
+        .upload(storagePath, archivo, { upsert: false });
+      if (uploadError) {
+        console.error('[docs] Error Storage:', uploadError);
+        setDocError(e => ({ ...e, [tipo]: 'Error al subir el archivo: ' + uploadError.message }));
+        setDocSubiendo(s => ({ ...s, [tipo]: false }));
+        return;
+      }
+      console.log('[docs] Storage OK. Guardando en BD...');
+
+      const upsertPayload = {
+        id: `DOC_${tipo}_${estancia.id}`,
+        inquilino_id: estancia.inquilinos.id,
+        estancia_id: estancia.id,
+        tipo,
+        nombre: archivo.name,
+        url: storagePath,
+        fecha: new Date().toISOString().slice(0, 10),
+      };
+      const { error: dbError } = await sb.from('documentos').upsert(upsertPayload, { onConflict: 'id' });
+      if (dbError) {
+        console.error('[docs] Error BD:', dbError);
+        setDocError(e => ({ ...e, [tipo]: 'Error al guardar en base de datos: ' + dbError.message }));
+        setDocSubiendo(s => ({ ...s, [tipo]: false }));
+        return;
+      }
+      console.log('[docs] BD OK. Refrescando lista...');
+
+      const { data: docsData, error: fetchError } = await sb.from('documentos').select('tipo, nombre, fecha').eq('estancia_id', estancia.id);
+      if (fetchError) console.error('[docs] Error al refrescar lista:', fetchError);
+      setDocsExistentes((docsData as DocRow[]) || []);
       setDocSubiendo(s => ({ ...s, [tipo]: false }));
-      return;
+      setDocReemplazar(r => ({ ...r, [tipo]: false }));
+      setDocExito(x => ({ ...x, [tipo]: true }));
+      setTimeout(() => setDocExito(x => ({ ...x, [tipo]: false })), 4000);
+    } catch (err) {
+      console.error('[docs] Error inesperado:', err);
+      setDocError(e => ({ ...e, [tipo]: 'Error inesperado. Inténtalo de nuevo.' }));
+      setDocSubiendo(s => ({ ...s, [tipo]: false }));
     }
-    await sb.from('documentos').upsert({
-      id: `DOC_${tipo}_${estancia.id}`,
-      inquilino_id: estancia.inquilinos.id,
-      estancia_id: estancia.id,
-      tipo,
-      nombre: archivo.name,
-      url: storagePath,
-      fecha: new Date().toISOString().slice(0, 10),
-    }, { onConflict: 'id' });
-    const { data: docsData } = await sb.from('documentos').select('tipo, nombre, fecha').eq('estancia_id', estancia.id);
-    setDocsExistentes((docsData as DocRow[]) || []);
-    setDocSubiendo(s => ({ ...s, [tipo]: false }));
-    setDocReemplazar(r => ({ ...r, [tipo]: false }));
   }
 
   // ── Login screen ────────────────────────────────────────────
@@ -757,6 +783,16 @@ export default function PortalPage() {
                             }}
                           />
                         </label>
+                      )}
+                      {docError[tipo] && (
+                        <p style={{ margin: '8px 0 0', fontSize: 12, color: C.red, background: '#FEF2F2', padding: '7px 10px', borderRadius: 7 }}>
+                          {docError[tipo]}
+                        </p>
+                      )}
+                      {docExito[tipo] && (
+                        <p style={{ margin: '8px 0 0', fontSize: 12, color: '#15803D', background: '#F0FDF4', padding: '7px 10px', borderRadius: 7, fontWeight: 600 }}>
+                          ✓ Documento guardado
+                        </p>
                       )}
                     </div>
                   );

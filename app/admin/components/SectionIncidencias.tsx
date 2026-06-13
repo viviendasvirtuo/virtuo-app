@@ -16,6 +16,9 @@ interface IncidenciaRow {
   propiedad_id: string | null;
   unidad_nombre: string | null;
   propiedad_nombre: string | null;
+  foto_antes_url: string | null;
+  video_url: string | null;
+  historial: { fecha: string; estado_anterior: string; estado_nuevo: string }[];
 }
 
 interface PropiedadSimple { id: string; nombre: string; }
@@ -38,13 +41,13 @@ const EMPTY_FORM: IncForm = {
   tipo: 'otros',
   descripcion: '',
   prioridad: 'media',
-  estado: 'ABIERTA',
+  estado: 'RECIBIDO',
   coste: '',
   sla_horas: '48',
 };
 
 const TIPOS = ['fontaneria', 'electricidad', 'limpieza', 'cerrajeria', 'electrodomestico', 'pintura', 'otros'];
-const ESTADOS_INC = ['ABIERTA', 'EN_PROCESO', 'RESUELTA', 'CERRADA'];
+const ESTADOS_INC = ['RECIBIDO', 'ASIGNADO', 'EN_PROCESO', 'SOLUCIONADO'];
 
 const inp = {
   width: '100%',
@@ -99,7 +102,7 @@ function IncidenciaModal({
           tipo: editData.tipo ?? 'otros',
           descripcion: editData.descripcion ?? '',
           prioridad: editData.prioridad ?? 'media',
-          estado: editData.estado ?? 'ABIERTA',
+          estado: editData.estado ?? 'RECIBIDO',
           coste: editData.coste != null ? String(editData.coste) : '',
           sla_horas: editData.sla_horas != null ? String(editData.sla_horas) : '48',
         }
@@ -139,7 +142,16 @@ function IncidenciaModal({
     };
 
     if (isEdit && editData) {
-      const { error } = await sb.from('incidencias').update(payload).eq('id', editData.id);
+      const updatePayload: Record<string, unknown> = { ...payload };
+      if (editData.estado !== form.estado) {
+        const prevHistorial: { fecha: string; estado_anterior: string; estado_nuevo: string }[] =
+          Array.isArray(editData.historial) ? editData.historial : [];
+        updatePayload.historial = [
+          ...prevHistorial,
+          { fecha: new Date().toISOString(), estado_anterior: editData.estado, estado_nuevo: form.estado },
+        ];
+      }
+      const { error } = await sb.from('incidencias').update(updatePayload).eq('id', editData.id);
       if (error) { setErr(error.message); setSaving(false); return; }
     } else {
       const id = 'INC_' + Date.now().toString().slice(-8);
@@ -238,6 +250,8 @@ function IncidenciaModal({
   );
 }
 
+type Lightbox = { url: string; tipo: 'imagen' | 'video' };
+
 export default function SectionIncidencias() {
   const [data, setData] = useState<IncidenciaRow[]>([]);
   const [propiedades, setPropiedades] = useState<PropiedadSimple[]>([]);
@@ -245,6 +259,7 @@ export default function SectionIncidencias() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<(IncidenciaRow & { _isEdit: boolean }) | null>(null);
+  const [lightbox, setLightbox] = useState<Lightbox | null>(null);
 
   async function load() {
     setLoading(true);
@@ -252,7 +267,7 @@ export default function SectionIncidencias() {
 
     const [incRes, propRes, uniRes] = await Promise.all([
       sb.from('incidencias')
-        .select('id, tipo, descripcion, prioridad, estado, fecha_reporte, sla_horas, coste, unidad_id, propiedad_id, unidades(nombre), propiedades(nombre)')
+        .select('id, tipo, descripcion, prioridad, estado, fecha_reporte, sla_horas, coste, unidad_id, propiedad_id, foto_antes_url, video_url, historial, unidades(nombre), propiedades(nombre)')
         .order('fecha_reporte', { ascending: false }),
       sb.from('propiedades').select('id, nombre').order('nombre'),
       sb.from('unidades').select('id, nombre, propiedad_id, propiedades(nombre)').order('nombre'),
@@ -264,6 +279,8 @@ export default function SectionIncidencias() {
           id: string; tipo: string; descripcion: string | null; prioridad: string;
           estado: string; fecha_reporte: string; sla_horas: number | null; coste: number | null;
           unidad_id: string | null; propiedad_id: string | null;
+          foto_antes_url: string | null; video_url: string | null;
+          historial: { fecha: string; estado_anterior: string; estado_nuevo: string }[] | null;
           unidades: { nombre: string } | null; propiedades: { nombre: string } | null;
         }>).map(r => ({
           id: r.id, tipo: r.tipo, descripcion: r.descripcion, prioridad: r.prioridad,
@@ -271,6 +288,9 @@ export default function SectionIncidencias() {
           coste: r.coste, unidad_id: r.unidad_id, propiedad_id: r.propiedad_id,
           unidad_nombre: r.unidades?.nombre ?? null,
           propiedad_nombre: r.propiedades?.nombre ?? null,
+          foto_antes_url: r.foto_antes_url ?? null,
+          video_url: r.video_url ?? null,
+          historial: r.historial ?? [],
         }))
       );
     }
@@ -299,10 +319,10 @@ export default function SectionIncidencias() {
     load();
   }
 
-  const altas     = data.filter((i: IncidenciaRow) => i.prioridad === 'alta').length;
-  const medias    = data.filter((i: IncidenciaRow) => i.prioridad === 'media').length;
-  const resueltas = data.filter((i: IncidenciaRow) => i.estado === 'RESUELTA' || i.estado === 'resuelta').length;
-  const slaVencidas = data.filter((i: IncidenciaRow) => i.estado !== 'RESUELTA' && i.estado !== 'resuelta' && isSlaVencido(i.fecha_reporte, i.sla_horas)).length;
+  const altas       = data.filter((i: IncidenciaRow) => i.prioridad === 'alta').length;
+  const medias      = data.filter((i: IncidenciaRow) => i.prioridad === 'media').length;
+  const resueltas   = data.filter((i: IncidenciaRow) => i.estado === 'SOLUCIONADO').length;
+  const slaVencidas = data.filter((i: IncidenciaRow) => i.estado !== 'SOLUCIONADO' && isSlaVencido(i.fecha_reporte, i.sla_horas)).length;
 
   if (loading) return (
     <div>{[1, 2, 3, 4].map(i => <div key={i} style={{ background: C.g1, borderRadius: 10, height: 60, marginBottom: 12 }} />)}</div>
@@ -348,9 +368,20 @@ export default function SectionIncidencias() {
         {data.map((inc: IncidenciaRow) => {
           const pStyle = priorityPill(inc.prioridad);
           const borderColor = priorityColor(inc.prioridad);
-          const isResuelta = inc.estado === 'RESUELTA' || inc.estado === 'resuelta';
-          const vencido = !isResuelta && isSlaVencido(inc.fecha_reporte, inc.sla_horas);
+          const isSolucionado = inc.estado === 'SOLUCIONADO';
+          const vencido = !isSolucionado && isSlaVencido(inc.fecha_reporte, inc.sla_horas);
           const fecha = new Date(inc.fecha_reporte).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+          const estadoBadge: Record<string, { bg: string; color: string; label: string }> = {
+            RECIBIDO:    { bg: '#EFF6FF', color: '#1D4ED8', label: 'RECIBIDO' },
+            ASIGNADO:    { bg: '#FAF5FF', color: '#7C3AED', label: 'ASIGNADO' },
+            EN_PROCESO:  { bg: C.bl,      color: C.b,       label: 'EN PROCESO' },
+            SOLUCIONADO: { bg: C.gl,      color: C.g,       label: 'SOLUCIONADO' },
+          };
+          const eBadge = estadoBadge[inc.estado];
+
+          const mediaUrl = inc.foto_antes_url || inc.video_url;
+          const mediaType: 'imagen' | 'video' | null = inc.foto_antes_url ? 'imagen' : inc.video_url ? 'video' : null;
 
           return (
             <div key={inc.id} style={{ ...card, borderLeft: `4px solid ${borderColor}` }}>
@@ -360,17 +391,28 @@ export default function SectionIncidencias() {
                     <span style={{ ...pStyle, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8 }}>
                       {inc.prioridad.toUpperCase()}
                     </span>
-                    {isResuelta && (
-                      <span style={{ background: C.gl, color: C.g, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8 }}>RESUELTA</span>
-                    )}
-                    {!isResuelta && (inc.estado === 'EN_PROCESO' || inc.estado === 'en_proceso') && (
-                      <span style={{ background: C.bl, color: C.b, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8 }}>EN PROCESO</span>
+                    {eBadge && (
+                      <span style={{ background: eBadge.bg, color: eBadge.color, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8 }}>{eBadge.label}</span>
                     )}
                     {vencido && (
                       <span style={{ background: C.rl, color: C.r, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8 }}>⏰ SLA VENCIDO</span>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                    {mediaUrl && mediaType && (
+                      <button
+                        onClick={() => setLightbox({ url: mediaUrl, tipo: mediaType })}
+                        title="Ver adjunto"
+                        style={{ padding: 0, border: 'none', borderRadius: 6, overflow: 'hidden', cursor: 'pointer', background: 'none', flexShrink: 0 }}
+                      >
+                        {mediaType === 'imagen' ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={mediaUrl} alt="foto" style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 6, display: 'block', border: '1.5px solid #E2E6EF' }} />
+                        ) : (
+                          <div style={{ width: 52, height: 52, borderRadius: 6, background: '#F0F4FF', border: '1.5px solid #E2E6EF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>▶️</div>
+                        )}
+                      </button>
+                    )}
                     <button
                       onClick={() => openEdit(inc)}
                       style={{ background: '#F0F4FF', border: 'none', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#1E4DB7', cursor: 'pointer' }}
@@ -410,6 +452,35 @@ export default function SectionIncidencias() {
           onClose={() => { setModalOpen(false); setEditTarget(null); }}
           onSaved={handleSaved}
         />
+      )}
+
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', color: 'white', fontSize: 28, cursor: 'pointer', lineHeight: 1 }}
+          >×</button>
+          {lightbox.tipo === 'imagen' ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={lightbox.url}
+              alt="adjunto"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: '90vw', maxHeight: '88vh', objectFit: 'contain', borderRadius: 10, boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
+            />
+          ) : (
+            <video
+              src={lightbox.url}
+              controls
+              autoPlay
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: '90vw', maxHeight: '88vh', borderRadius: 10, boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}
+            />
+          )}
+        </div>
       )}
     </div>
   );

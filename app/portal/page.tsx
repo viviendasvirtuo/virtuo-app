@@ -44,6 +44,64 @@ interface Incidencia {
   fecha_reporte: string;
 }
 
+// ── Design tokens ──────────────────────────────────────────────
+const C = {
+  primary:   '#1E4DB7',
+  secondary: '#2E86DE',
+  green:     '#27AE60',
+  bg:        '#F0F4FF',
+  border:    '#E2E6EF',
+  white:     '#FFFFFF',
+  gray50:    '#F8FAFF',
+  gray100:   '#F3F4F6',
+  gray400:   '#9CA3AF',
+  gray500:   '#6B7280',
+  gray700:   '#374151',
+  gray900:   '#111827',
+  amber:     '#F59E0B',
+  red:       '#EF4444',
+};
+
+const FONT = "var(--font-jakarta, 'Plus Jakarta Sans', system-ui, sans-serif)";
+
+const card: React.CSSProperties = {
+  background: C.white,
+  borderRadius: '14px',
+  boxShadow: '0 2px 12px rgba(30,77,183,0.07)',
+  border: `1px solid ${C.border}`,
+  marginBottom: '14px',
+  overflow: 'hidden',
+};
+
+const cardHead: React.CSSProperties = {
+  padding: '16px 20px 12px',
+  fontSize: '14px',
+  fontWeight: '700',
+  color: C.primary,
+  borderBottom: `1px solid ${C.border}`,
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+};
+
+const label: React.CSSProperties = {
+  display: 'block',
+  fontSize: '12px',
+  fontWeight: '600',
+  color: C.gray500,
+  marginBottom: '5px',
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+};
+
+const value: React.CSSProperties = {
+  margin: 0,
+  fontWeight: '700',
+  fontSize: '15px',
+  color: C.gray900,
+};
+
+// ── Component ──────────────────────────────────────────────────
 export default function PortalPage() {
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);
@@ -150,17 +208,19 @@ export default function PortalPage() {
     setTimeout(() => setIncExito(false), 5000);
   }
 
+  // ── Login screen ────────────────────────────────────────────
   if (!estancia) {
     return (
-      <main style={{ minHeight: '100vh', background: '#F0F4FF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-        <div style={{ background: 'white', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 24px rgba(30,77,183,0.10)' }}>
+      <main style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: FONT }}>
+        <div style={{ background: C.white, borderRadius: '20px', padding: '40px 36px', width: '100%', maxWidth: '420px', boxShadow: '0 8px 32px rgba(30,77,183,0.12)', border: `1px solid ${C.border}` }}>
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏠</div>
-            <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#1E4DB7', margin: '0 0 8px' }}>Portal Inquilino</h1>
-            <p style={{ color: '#6B7280', fontSize: '14px', margin: 0 }}>Viviendas Virtuo · R&R Property Mgmt</p>
+            <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: `linear-gradient(135deg, ${C.primary}, ${C.secondary})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', margin: '0 auto 16px' }}>🏠</div>
+            <h1 style={{ fontSize: '22px', fontWeight: '800', color: C.primary, margin: '0 0 6px' }}>Portal Inquilino</h1>
+            <p style={{ color: C.gray400, fontSize: '13px', margin: 0 }}>Viviendas Virtuo · R&R Property Mgmt</p>
           </div>
+
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+            <label style={{ ...label, textTransform: 'none', fontSize: '13px', letterSpacing: 0 }}>
               Código de habitación
             </label>
             <input
@@ -169,22 +229,25 @@ export default function PortalPage() {
               onChange={(e) => setCodigo(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               placeholder="Ej: UNIT_SANTS_HAB1"
-              style={{ width: '100%', padding: '12px 16px', border: '2px solid #E2E6EF', borderRadius: '10px', fontSize: '15px', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '13px 16px', border: `2px solid ${C.border}`, borderRadius: '10px', fontSize: '15px', outline: 'none', boxSizing: 'border-box', fontFamily: FONT, color: C.gray900 }}
             />
           </div>
+
           {error && (
-            <p style={{ color: '#EF4444', fontSize: '13px', marginBottom: '16px', padding: '10px', background: '#FEF2F2', borderRadius: '8px' }}>
+            <p style={{ color: C.red, fontSize: '13px', marginBottom: '16px', padding: '10px 14px', background: '#FEF2F2', borderRadius: '8px', margin: '0 0 16px' }}>
               {error}
             </p>
           )}
+
           <button
             onClick={handleLogin}
             disabled={loading}
-            style={{ width: '100%', padding: '14px', background: '#1E4DB7', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}
+            style={{ width: '100%', padding: '14px', background: `linear-gradient(135deg, ${C.primary}, ${C.secondary})`, color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: FONT, letterSpacing: '0.01em' }}
           >
             {loading ? 'Buscando...' : 'Acceder →'}
           </button>
-          <p style={{ textAlign: 'center', fontSize: '12px', color: '#9CA3AF', marginTop: '16px' }}>
+
+          <p style={{ textAlign: 'center', fontSize: '12px', color: C.gray400, marginTop: '16px' }}>
             Tu código está en tu contrato o pregunta a tu gestor
           </p>
         </div>
@@ -192,167 +255,257 @@ export default function PortalPage() {
     );
   }
 
-  const inq = estancia.inquilinos;
-  const uni = estancia.unidades;
+  // ── Dashboard ────────────────────────────────────────────────
+  const inq  = estancia.inquilinos;
+  const uni  = estancia.unidades;
   const prop = estancia.unidades.propiedades;
 
   const estadoColor: Record<string, string> = {
-    PAGADO: '#27AE60', PENDIENTE: '#F59E0B', VENCIDO: '#EF4444'
+    PAGADO: C.green, PENDIENTE: C.amber, VENCIDO: C.red,
   };
   const prioridadColor: Record<string, string> = {
-    alta: '#EF4444', media: '#F59E0B', baja: '#27AE60'
+    alta: C.red, media: C.amber, baja: C.green,
   };
 
+  // Primer pago pendiente (o el más reciente) se destaca
+  const pagoDestacadoId = pagos.find((p) => p.estado === 'PENDIENTE')?.id ?? pagos[0]?.id;
+
+  const tieneWifi = !!(prop.wifi_nombre || prop.wifi_password);
+
   return (
-    <main style={{ minHeight: '100vh', background: '#F0F4FF', padding: '24px' }}>
-      <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+    <main style={{ minHeight: '100vh', background: C.bg, padding: '20px 16px 40px', fontFamily: FONT }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
-        {/* Header */}
-        <div style={{ background: '#1E4DB7', borderRadius: '16px', padding: '24px', marginBottom: '20px', color: 'white' }}>
-          <p style={{ margin: '0 0 4px', fontSize: '13px', opacity: 0.8 }}>Bienvenido/a</p>
-          <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '700' }}>{inq.nombre} {inq.apellidos}</h1>
-          <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>{prop.nombre} · {uni.nombre}</p>
+        {/* ── Header bienvenida ── */}
+        <div style={{
+          background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+          borderRadius: '16px',
+          padding: '24px 24px 20px',
+          marginBottom: '14px',
+          color: 'white',
+          boxShadow: '0 4px 20px rgba(30,77,183,0.22)',
+        }}>
+          <p style={{ margin: '0 0 4px', fontSize: '12px', opacity: 0.75, fontWeight: '500', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Bienvenido/a</p>
+          <h1 style={{ margin: '0 0 6px', fontSize: '22px', fontWeight: '800', lineHeight: 1.2 }}>{inq.nombre} {inq.apellidos}</h1>
+          <p style={{ margin: 0, fontSize: '13px', opacity: 0.85, fontWeight: '500' }}>{prop.nombre} &nbsp;·&nbsp; {uni.nombre}</p>
         </div>
 
-        {/* Info piso */}
-        <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
-          <h2 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '700', color: '#1E4DB7' }}>📋 Tu estancia</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div><p style={{ margin: '0 0 2px', fontSize: '11px', color: '#9CA3AF' }}>Renta mensual</p><p style={{ margin: 0, fontWeight: '700', color: '#111827' }}>{estancia.renta_mensual}€</p></div>
-            <div><p style={{ margin: '0 0 2px', fontSize: '11px', color: '#9CA3AF' }}>Entrada</p><p style={{ margin: 0, fontWeight: '600', color: '#111827' }}>{new Date(estancia.fecha_entrada).toLocaleDateString('es-ES')}</p></div>
-            <div><p style={{ margin: '0 0 2px', fontSize: '11px', color: '#9CA3AF' }}>Fin previsto</p><p style={{ margin: 0, fontWeight: '600', color: '#111827' }}>{new Date(estancia.fecha_salida_prevista).toLocaleDateString('es-ES')}</p></div>
-            <div><p style={{ margin: '0 0 2px', fontSize: '11px', color: '#9CA3AF' }}>WiFi</p><p style={{ margin: 0, fontWeight: '600', color: '#111827' }}>{prop.wifi_nombre || '—'}</p></div>
-          </div>
-          {prop.wifi_password && <p style={{ margin: '12px 0 0', fontSize: '13px', color: '#6B7280' }}>Contraseña WiFi: <strong>{prop.wifi_password}</strong></p>}
-        </div>
-
-        {/* Pagos */}
-        <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
-          <h2 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '700', color: '#1E4DB7' }}>💰 Mis pagos</h2>
-          {pagos.length === 0 ? (
-            <p style={{ color: '#9CA3AF', fontSize: '14px' }}>No hay pagos registrados.</p>
-          ) : (
-            pagos.map((p) => (
-              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #F3F4F6' }}>
-                <div>
-                  <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '14px', color: '#111827' }}>{p.mes_facturado}</p>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#9CA3AF' }}>Vence: {new Date(p.fecha_vencimiento).toLocaleDateString('es-ES')}</p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ margin: '0 0 2px', fontWeight: '700', fontSize: '15px' }}>{p.importe}€</p>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: estadoColor[p.estado] || '#6B7280' }}>{p.estado}</span>
-                </div>
+        {/* ── Tu estancia ── */}
+        <div style={card}>
+          <div style={cardHead}>📋 Tu estancia</div>
+          <div style={{ padding: '16px 20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: tieneWifi ? '1fr 1fr' : '1fr 1fr', gap: '16px 24px' }}>
+              <div>
+                <p style={label}>Renta mensual</p>
+                <p style={{ ...value, color: C.primary }}>{estancia.renta_mensual}€</p>
               </div>
-            ))
-          )}
+              <div>
+                <p style={label}>Entrada</p>
+                <p style={value}>{new Date(estancia.fecha_entrada).toLocaleDateString('es-ES')}</p>
+              </div>
+              <div>
+                <p style={label}>Fin previsto</p>
+                <p style={value}>{new Date(estancia.fecha_salida_prevista).toLocaleDateString('es-ES')}</p>
+              </div>
+              {tieneWifi && (
+                <div>
+                  <p style={label}>WiFi</p>
+                  <p style={value}>{prop.wifi_nombre}</p>
+                </div>
+              )}
+            </div>
+            {tieneWifi && prop.wifi_password && (
+              <div style={{ marginTop: '14px', padding: '10px 14px', background: C.bg, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '14px' }}>🔑</span>
+                <span style={{ fontSize: '13px', color: C.gray700 }}>Contraseña WiFi: <strong style={{ color: C.gray900 }}>{prop.wifi_password}</strong></span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Incidencias + formulario */}
-        <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
-          {/* Cabecera con botón */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#1E4DB7' }}>🔧 Mis incidencias</h2>
+        {/* ── Mis pagos ── */}
+        <div style={card}>
+          <div style={cardHead}>💰 Mis pagos</div>
+          <div style={{ padding: '4px 0' }}>
+            {pagos.length === 0 ? (
+              <p style={{ color: C.gray400, fontSize: '14px', padding: '16px 20px' }}>No hay pagos registrados.</p>
+            ) : (
+              pagos.map((p, idx) => {
+                const destacado = p.id === pagoDestacadoId;
+                return (
+                  <div
+                    key={p.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '12px 20px',
+                      borderBottom: idx < pagos.length - 1 ? `1px solid ${C.gray100}` : 'none',
+                      background: destacado ? '#FFFBEB' : 'transparent',
+                      borderLeft: destacado ? `3px solid ${C.amber}` : '3px solid transparent',
+                    }}
+                  >
+                    <div>
+                      <p style={{ margin: '0 0 2px', fontWeight: '700', fontSize: '14px', color: C.gray900 }}>{p.mes_facturado}</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: C.gray400 }}>Vence: {new Date(p.fecha_vencimiento).toLocaleDateString('es-ES')}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ margin: '0 0 3px', fontWeight: '800', fontSize: '16px', color: C.gray900 }}>{p.importe}€</p>
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '2px 8px',
+                        borderRadius: '20px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        background: (estadoColor[p.estado] || C.gray400) + '20',
+                        color: estadoColor[p.estado] || C.gray400,
+                      }}>{p.estado}</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* ── Mis incidencias + formulario ── */}
+        <div style={card}>
+          <div style={{ ...cardHead, justifyContent: 'space-between' }}>
+            <span>🔧 Mis incidencias</span>
             <button
               onClick={() => { setMostrarFormInc(!mostrarFormInc); setIncError(''); }}
               style={{
-                padding: '7px 12px',
-                background: mostrarFormInc ? '#F3F4F6' : '#FFF3CD',
-                color: mostrarFormInc ? '#6B7280' : '#92400E',
-                border: `1px solid ${mostrarFormInc ? '#E2E6EF' : '#FCD34D'}`,
-                borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap'
+                padding: '6px 12px',
+                background: mostrarFormInc ? C.gray100 : '#FFF8E1',
+                color: mostrarFormInc ? C.gray500 : '#92400E',
+                border: `1px solid ${mostrarFormInc ? C.border : '#FCD34D'}`,
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                fontFamily: FONT,
+                whiteSpace: 'nowrap',
               }}
             >
-              {mostrarFormInc ? '✕ Cancelar' : '⚠️ Reportar incidencia'}
+              {mostrarFormInc ? '✕ Cancelar' : '⚠️ Reportar'}
             </button>
           </div>
 
-          {/* Confirmación de envío */}
-          {incExito && (
-            <div style={{ marginBottom: '16px', padding: '12px 14px', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px', color: '#15803D', fontSize: '14px', fontWeight: '600' }}>
-              ✅ Incidencia enviada correctamente. Te contactaremos en menos de 48 h.
-            </div>
-          )}
+          <div style={{ padding: '12px 20px' }}>
 
-          {/* Formulario */}
-          {mostrarFormInc && (
-            <div style={{ marginBottom: '20px', padding: '16px', background: '#F8FAFF', border: '1px solid #E2E6EF', borderRadius: '12px' }}>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Tipo *</label>
-                <select
-                  value={incTipo}
-                  onChange={(e) => setIncTipo(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E2E6EF', borderRadius: '8px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box' }}
-                >
-                  <option value="">Selecciona una categoría…</option>
-                  <option value="fontaneria">Fontanería</option>
-                  <option value="electricidad">Electricidad</option>
-                  <option value="limpieza">Limpieza</option>
-                  <option value="cerrajeria">Cerrajería</option>
-                  <option value="climatizacion">Climatización</option>
-                  <option value="otros">Otros</option>
-                </select>
+            {/* Confirmación envío */}
+            {incExito && (
+              <div style={{ marginBottom: '14px', padding: '12px 14px', background: '#F0FDF4', border: `1px solid #86EFAC`, borderRadius: '10px', color: '#15803D', fontSize: '13px', fontWeight: '600' }}>
+                ✅ Incidencia enviada. Te contactaremos en menos de 48 h.
               </div>
+            )}
 
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Descripción *</label>
-                <textarea
-                  value={incDesc}
-                  onChange={(e) => setIncDesc(e.target.value)}
-                  placeholder="Describe el problema con el máximo detalle posible…"
-                  rows={4}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E2E6EF', borderRadius: '8px', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Prioridad</label>
-                <select
-                  value={incPrioridad}
-                  onChange={(e) => setIncPrioridad(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E2E6EF', borderRadius: '8px', fontSize: '14px', background: 'white', outline: 'none', boxSizing: 'border-box' }}
-                >
-                  <option value="alta">🔴 Alta — urgente</option>
-                  <option value="media">🟡 Media — esta semana</option>
-                  <option value="baja">🟢 Baja — cuando puedas</option>
-                </select>
-              </div>
-
-              {incError && (
-                <p style={{ color: '#EF4444', fontSize: '13px', marginBottom: '12px', padding: '10px', background: '#FEF2F2', borderRadius: '8px' }}>
-                  {incError}
-                </p>
-              )}
-
-              <button
-                onClick={handleReportarIncidencia}
-                disabled={incEnviando}
-                style={{ width: '100%', padding: '13px', background: incEnviando ? '#93AADA' : '#1E4DB7', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '600', cursor: incEnviando ? 'not-allowed' : 'pointer' }}
-              >
-                {incEnviando ? 'Enviando…' : 'Enviar incidencia'}
-              </button>
-            </div>
-          )}
-
-          {/* Lista de incidencias */}
-          {incidencias.length === 0 ? (
-            <p style={{ color: '#9CA3AF', fontSize: '14px' }}>No hay incidencias registradas.</p>
-          ) : (
-            incidencias.map((inc) => (
-              <div key={inc.id} style={{ padding: '12px 0', borderBottom: '1px solid #F3F4F6' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <p style={{ margin: 0, fontWeight: '600', fontSize: '14px', color: '#111827', textTransform: 'capitalize' }}>{inc.tipo}</p>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: prioridadColor[inc.prioridad] || '#6B7280', textTransform: 'uppercase' }}>{inc.prioridad}</span>
+            {/* Formulario */}
+            {mostrarFormInc && (
+              <div style={{ marginBottom: '16px', padding: '16px', background: C.gray50, border: `1px solid ${C.border}`, borderRadius: '12px' }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={label}>Tipo *</label>
+                  <select
+                    value={incTipo}
+                    onChange={(e) => setIncTipo(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', border: `2px solid ${C.border}`, borderRadius: '8px', fontSize: '14px', background: C.white, outline: 'none', boxSizing: 'border-box', fontFamily: FONT, color: C.gray900 }}
+                  >
+                    <option value="">Selecciona una categoría…</option>
+                    <option value="fontaneria">Fontanería</option>
+                    <option value="electricidad">Electricidad</option>
+                    <option value="limpieza">Limpieza</option>
+                    <option value="cerrajeria">Cerrajería</option>
+                    <option value="climatizacion">Climatización</option>
+                    <option value="otros">Otros</option>
+                  </select>
                 </div>
-                <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#6B7280' }}>{inc.descripcion}</p>
-                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{inc.estado} · {new Date(inc.fecha_reporte).toLocaleDateString('es-ES')}</span>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={label}>Descripción *</label>
+                  <textarea
+                    value={incDesc}
+                    onChange={(e) => setIncDesc(e.target.value)}
+                    placeholder="Describe el problema con el máximo detalle posible…"
+                    rows={4}
+                    style={{ width: '100%', padding: '10px 12px', border: `2px solid ${C.border}`, borderRadius: '8px', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', fontFamily: FONT, color: C.gray900 }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={label}>Prioridad</label>
+                  <select
+                    value={incPrioridad}
+                    onChange={(e) => setIncPrioridad(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', border: `2px solid ${C.border}`, borderRadius: '8px', fontSize: '14px', background: C.white, outline: 'none', boxSizing: 'border-box', fontFamily: FONT, color: C.gray900 }}
+                  >
+                    <option value="alta">🔴 Alta — urgente</option>
+                    <option value="media">🟡 Media — esta semana</option>
+                    <option value="baja">🟢 Baja — cuando puedas</option>
+                  </select>
+                </div>
+
+                {incError && (
+                  <p style={{ color: C.red, fontSize: '13px', marginBottom: '12px', padding: '10px 12px', background: '#FEF2F2', borderRadius: '8px' }}>
+                    {incError}
+                  </p>
+                )}
+
+                <button
+                  onClick={handleReportarIncidencia}
+                  disabled={incEnviando}
+                  style={{ width: '100%', padding: '13px', background: incEnviando ? '#93AADA' : `linear-gradient(135deg, ${C.primary}, ${C.secondary})`, color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: incEnviando ? 'not-allowed' : 'pointer', fontFamily: FONT }}
+                >
+                  {incEnviando ? 'Enviando…' : 'Enviar incidencia'}
+                </button>
               </div>
-            ))
-          )}
+            )}
+
+            {/* Lista */}
+            {incidencias.length === 0 ? (
+              <p style={{ color: C.gray400, fontSize: '14px', margin: 0 }}>No hay incidencias registradas.</p>
+            ) : (
+              incidencias.map((inc, idx) => (
+                <div key={inc.id} style={{ padding: '12px 0', borderBottom: idx < incidencias.length - 1 ? `1px solid ${C.gray100}` : 'none' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                    <p style={{ margin: 0, fontWeight: '700', fontSize: '14px', color: C.gray900, textTransform: 'capitalize' }}>{inc.tipo}</p>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '2px 8px',
+                      borderRadius: '20px',
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      background: (prioridadColor[inc.prioridad] || C.gray400) + '22',
+                      color: prioridadColor[inc.prioridad] || C.gray400,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      flexShrink: 0,
+                      marginLeft: '8px',
+                    }}>{inc.prioridad}</span>
+                  </div>
+                  <p style={{ margin: '0 0 4px', fontSize: '13px', color: C.gray500 }}>{inc.descripcion}</p>
+                  <span style={{ fontSize: '11px', color: C.gray400 }}>{inc.estado} · {new Date(inc.fecha_reporte).toLocaleDateString('es-ES')}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
+        {/* ── Cerrar sesión ── */}
         <button
           onClick={() => { setEstancia(null); setCodigo(''); }}
-          style={{ width: '100%', padding: '12px', background: 'white', color: '#6B7280', border: '2px solid #E2E6EF', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+          style={{
+            width: '100%',
+            padding: '12px',
+            background: 'transparent',
+            color: C.gray500,
+            border: `1px solid ${C.border}`,
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            fontFamily: FONT,
+            marginTop: '4px',
+          }}
         >
           Cerrar sesión
         </button>

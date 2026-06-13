@@ -56,7 +56,7 @@ interface Incidencia {
 
 // ── Códigos de acceso cortos → unidad_id ───────────────────────
 const codigosAcceso: Record<string, string> = {
-  // '123456': 'UNIT_SANTS_HAB1',
+  '123456': 'UNIT_SANTS_HAB1',
 };
 
 // ── Design tokens ──────────────────────────────────────────────

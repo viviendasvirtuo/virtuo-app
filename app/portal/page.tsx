@@ -131,6 +131,8 @@ export default function PortalPage() {
   const [incDesc, setIncDesc] = useState('');
   const [incPrioridad, setIncPrioridad] = useState('media');
   const [incEnviando, setIncEnviando] = useState(false);
+  const [incSubiendo, setIncSubiendo] = useState(false);
+  const [incArchivo, setIncArchivo] = useState<File | null>(null);
   const [incExito, setIncExito] = useState(false);
   const [incError, setIncError] = useState('');
 
@@ -184,6 +186,10 @@ export default function PortalPage() {
       setIncError('Completa el tipo y la descripción.');
       return;
     }
+    if (!incArchivo) {
+      setIncError('Debes adjuntar una foto o vídeo del problema.');
+      return;
+    }
     if (!estancia) return;
     setIncEnviando(true);
     setIncError('');
@@ -191,6 +197,29 @@ export default function PortalPage() {
     const incId = 'INC_' + Date.now().toString().slice(-8);
     const unidadId = codigosAcceso[codigo.trim()] ?? codigo.trim().toUpperCase();
 
+    // ── Subida del archivo a Storage ──
+    setIncSubiendo(true);
+    const ts = Date.now();
+    const safeName = incArchivo.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${unidadId}/${ts}_${safeName}`;
+    const { error: uploadError } = await sb.storage
+      .from('incidencias')
+      .upload(storagePath, incArchivo, { upsert: false });
+    setIncSubiendo(false);
+
+    if (uploadError) {
+      setIncError('Error al subir el archivo: ' + uploadError.message);
+      setIncEnviando(false);
+      return;
+    }
+
+    const { data: publicUrlData } = sb.storage
+      .from('incidencias')
+      .getPublicUrl(storagePath);
+    const mediaUrl = publicUrlData.publicUrl;
+    const esVideo = incArchivo.type.startsWith('video/');
+
+    // ── Insert incidencia ──
     const { error: insertError } = await sb.from('incidencias').insert({
       id: incId,
       propiedad_id: estancia.unidades.propiedad_id,
@@ -200,9 +229,9 @@ export default function PortalPage() {
       tipo: incTipo,
       descripcion: incDesc.trim(),
       prioridad: incPrioridad,
-      estado: 'ABIERTA',
       sla_horas: 48,
       fecha_reporte: new Date().toISOString(),
+      ...(esVideo ? { video_url: mediaUrl } : { foto_antes_url: mediaUrl }),
     });
 
     if (insertError) {
@@ -222,6 +251,7 @@ export default function PortalPage() {
     setIncTipo('');
     setIncDesc('');
     setIncPrioridad('media');
+    setIncArchivo(null);
     setIncEnviando(false);
     setIncExito(true);
     setMostrarFormInc(false);
@@ -525,6 +555,25 @@ export default function PortalPage() {
                   </select>
                 </div>
 
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={label}>Foto o vídeo del problema *</label>
+                  <label style={{
+                    display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer',
+                    padding: '10px 14px', border: `2px dashed ${incArchivo ? C.green : C.border}`,
+                    borderRadius: '8px', background: incArchivo ? '#F0FDF4' : C.gray50,
+                    fontSize: '13px', color: incArchivo ? '#15803D' : C.gray500,
+                  }}>
+                    <span style={{ fontSize: '20px' }}>{incArchivo ? '✅' : '📎'}</span>
+                    <span>{incArchivo ? incArchivo.name : 'Toca para adjuntar foto o vídeo'}</span>
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => setIncArchivo(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                </div>
+
                 {incError && (
                   <p style={{ color: C.red, fontSize: '13px', marginBottom: '12px', padding: '10px 12px', background: '#FEF2F2', borderRadius: '8px' }}>
                     {incError}
@@ -533,10 +582,10 @@ export default function PortalPage() {
 
                 <button
                   onClick={handleReportarIncidencia}
-                  disabled={incEnviando}
-                  style={{ width: '100%', padding: '13px', background: incEnviando ? '#93AADA' : `linear-gradient(135deg, ${C.primary}, ${C.secondary})`, color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: incEnviando ? 'not-allowed' : 'pointer', fontFamily: FONT }}
+                  disabled={incEnviando || incSubiendo}
+                  style={{ width: '100%', padding: '13px', background: (incEnviando || incSubiendo) ? '#93AADA' : `linear-gradient(135deg, ${C.primary}, ${C.secondary})`, color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: (incEnviando || incSubiendo) ? 'not-allowed' : 'pointer', fontFamily: FONT }}
                 >
-                  {incEnviando ? 'Enviando…' : 'Enviar incidencia'}
+                  {incSubiendo ? 'Subiendo archivo…' : incEnviando ? 'Enviando…' : 'Enviar incidencia'}
                 </button>
               </div>
             )}

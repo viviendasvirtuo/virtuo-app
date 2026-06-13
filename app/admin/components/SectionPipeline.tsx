@@ -3,6 +3,24 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { C, card } from './tokens';
 
+interface Candidato {
+  id: string;
+  nombre_completo: string;
+  email: string | null;
+  telefono: string | null;
+  dni_nie: string | null;
+  motivo_estancia: string | null;
+  grupo_flujo: string | null;
+  ponderacion_total: number | null;
+  veredicto: string | null;
+  pack_escogido: string | null;
+  precio_habitacion: number | null;
+  fecha_entrada: string | null;
+  fecha_salida: string | null;
+  estado: string;
+  unidad_interes_id: string | null;
+}
+
 interface Inquilino {
   id: string;
   nombre: string;
@@ -221,11 +239,55 @@ function InquilinoModal({
 }
 
 export default function SectionPipeline() {
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [loadingCand, setLoadingCand] = useState(true);
   const [inquilinos, setInquilinos] = useState<Inquilino[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<(InquilinoFull & { _isEdit: boolean }) | null>(null);
+
+  async function loadCandidatos() {
+    setLoadingCand(true);
+    const sb = createClient();
+    const { data } = await sb
+      .from('candidatos')
+      .select('id, nombre_completo, email, telefono, dni_nie, motivo_estancia, grupo_flujo, ponderacion_total, veredicto, pack_escogido, precio_habitacion, fecha_entrada, fecha_salida, estado, unidad_interes_id')
+      .in('estado', ['NUEVO', 'REVISADO'])
+      .order('fecha_alta', { ascending: false });
+    setCandidatos((data ?? []) as Candidato[]);
+    setLoadingCand(false);
+  }
+
+  async function convertirCandidato(c: Candidato) {
+    if (!confirm(`¿Convertir a ${c.nombre_completo} en inquilino?`)) return;
+    const sb = createClient();
+    const partes = c.nombre_completo.trim().split(' ');
+    const nombre = partes[0] ?? c.nombre_completo;
+    const apellidos = partes.slice(1).join(' ') || null;
+    const id = 'INQ_' + Date.now().toString().slice(-8);
+    const { error } = await sb.from('inquilinos').insert({
+      id,
+      nombre,
+      apellidos,
+      email: c.email ?? null,
+      telefono: c.telefono ?? null,
+      dni_nie: c.dni_nie ?? null,
+      grupo: c.grupo_flujo ?? null,
+      score_inquilino: c.ponderacion_total ?? null,
+    });
+    if (error) { alert('Error al convertir: ' + error.message); return; }
+    await sb.from('candidatos').update({ estado: 'CONVERTIDO' }).eq('id', c.id);
+    loadCandidatos();
+    load();
+  }
+
+  async function rechazarCandidato(id: string) {
+    if (!confirm('¿Marcar este candidato como rechazado?')) return;
+    const sb = createClient();
+    await sb.from('candidatos').update({ estado: 'RECHAZADO' }).eq('id', id);
+    loadCandidatos();
+  }
 
   async function load() {
     setLoading(true);
@@ -245,7 +307,7 @@ export default function SectionPipeline() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadCandidatos(); load(); }, []);
 
   async function openEdit(id: string) {
     const sb = createClient();
@@ -278,8 +340,84 @@ export default function SectionPipeline() {
     return '#EF4444';
   };
 
+  const veredictoStyle = (v: string | null): React.CSSProperties => {
+    if (v === 'Apto') return { background: '#D1FAE5', color: '#065F46', padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' as const };
+    if (v === 'Revisión manual') return { background: '#FEF3C7', color: '#92400E', padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' as const };
+    if (v === 'No apto') return { background: '#FEE2E2', color: '#991B1B', padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' as const };
+    return { color: C.g5, fontSize: 11 };
+  };
+
+  const thStyle: React.CSSProperties = { padding: '10px 14px', textAlign: 'left', color: '#1E4DB7', fontWeight: 700, fontSize: 11, borderBottom: '2px solid #E2E6EF', whiteSpace: 'nowrap' };
+  const tdStyle: React.CSSProperties = { padding: '10px 14px', fontSize: 13, verticalAlign: 'middle' };
+
   return (
     <div>
+      {/* ── Candidatos (Tally) ── */}
+      <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#1E4DB7' }}>📋 Candidatos (Tally)</h3>
+      <div style={{ ...card, marginBottom: 28 }}>
+        {loadingCand ? (
+          <div style={{ padding: 24, color: C.g5, fontSize: 14 }}>Cargando candidatos…</div>
+        ) : candidatos.length === 0 ? (
+          <div style={{ padding: '20px 24px', color: C.g5, fontSize: 14 }}>No hay candidatos pendientes.</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#F0F4FF' }}>
+                  {['Nombre', 'Motivo estancia', 'Ponderación', 'Veredicto', 'Pack', 'Hab. interés', 'Entrada / Salida', 'Acciones'].map(h => (
+                    <th key={h} style={thStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {candidatos.map((c, i) => (
+                  <tr key={c.id} style={{ background: i % 2 === 0 ? 'white' : '#F8FAFF', borderBottom: '1px solid #F0F0F0' }}>
+                    <td style={{ ...tdStyle, fontWeight: 600, color: '#111827', maxWidth: 160 }}>
+                      <div>{c.nombre_completo}</div>
+                      {c.email && <div style={{ fontSize: 11, color: C.g5, marginTop: 2 }}>{c.email}</div>}
+                    </td>
+                    <td style={{ ...tdStyle, color: C.g5, maxWidth: 140 }}>{c.motivo_estancia ?? '—'}</td>
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                      <span style={{ fontWeight: 700, fontSize: 15, color: c.ponderacion_total != null && c.ponderacion_total >= 70 ? '#27AE60' : c.ponderacion_total != null && c.ponderacion_total >= 40 ? '#F59E0B' : '#EF4444' }}>
+                        {c.ponderacion_total ?? '—'}
+                      </span>
+                    </td>
+                    <td style={tdStyle}>
+                      {c.veredicto
+                        ? <span style={veredictoStyle(c.veredicto)}>{c.veredicto}</span>
+                        : <span style={{ color: C.g5 }}>—</span>}
+                    </td>
+                    <td style={{ ...tdStyle, color: C.g5 }}>{c.pack_escogido ?? '—'}</td>
+                    <td style={{ ...tdStyle, color: C.g5 }}>
+                      {c.unidad_interes_id ?? '—'}
+                      {c.precio_habitacion != null && <div style={{ fontSize: 11, marginTop: 2 }}>{c.precio_habitacion}€/mes</div>}
+                    </td>
+                    <td style={{ ...tdStyle, color: C.g5, whiteSpace: 'nowrap' }}>
+                      {c.fecha_entrada ? new Date(c.fecha_entrada).toLocaleDateString('es-ES') : '—'}
+                      {c.fecha_salida && <> → {new Date(c.fecha_salida).toLocaleDateString('es-ES')}</>}
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                        <button
+                          onClick={() => convertirCandidato(c)}
+                          style={{ background: '#D1FAE5', border: 'none', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 600, color: '#065F46', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >✅ Convertir</button>
+                        <button
+                          onClick={() => rechazarCandidato(c.id)}
+                          style={{ background: '#FEE2E2', border: 'none', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 600, color: '#991B1B', cursor: 'pointer' }}
+                        >✕</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── Pipeline CRM (inquilinos) ── */}
+      <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#1E4DB7' }}>👥 Pipeline CRM</h3>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
         <button
           onClick={() => { setEditTarget(null); setModalOpen(true); }}

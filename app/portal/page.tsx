@@ -415,8 +415,8 @@ export default function PortalPage() {
           <p style={{ margin: 0, fontSize: '13px', opacity: 0.85, fontWeight: '500' }}>{prop.nombre} &nbsp;·&nbsp; {uni.nombre}</p>
         </div>
 
-        {/* ── Grid 2 columnas: Guía + Estancia + Pagos ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr] xl:grid-cols-[1.5fr_1fr_1fr] gap-4" style={{ alignItems: 'start', marginBottom: '14px' }}>
+        {/* ── Grid unificado 6 tarjetas ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
 
         {/* ── Wiki del piso ── */}
         {(() => {
@@ -431,7 +431,7 @@ export default function PortalPage() {
           const visibles = wiki ? items.filter(it => wiki[it.key]?.trim()) : [];
 
           return (
-            <div style={{ ...card, marginBottom: '14px' }}>
+            <div style={card}>
               <div style={{ ...cardHead }}>📖 Guía del piso</div>
               <div style={{ padding: '12px 20px' }}>
                 {!wiki || visibles.length === 0 ? (
@@ -439,7 +439,7 @@ export default function PortalPage() {
                     La guía del piso aún no está disponible.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 items-start">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
                     {visibles.map(({ key, icon, titulo }) => {
                       const abierto = wikiAbierto === key;
                       return (
@@ -475,7 +475,7 @@ export default function PortalPage() {
         })()}
 
         {/* ── Tu estancia ── */}
-        <div style={card}>
+        <div style={{ ...card, marginBottom: 0 }}>
           <div style={cardHead}>📋 Tu estancia</div>
           <div style={{ padding: '16px 20px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: tieneWifi ? '1fr 1fr' : '1fr 1fr', gap: '16px 24px' }}>
@@ -508,7 +508,7 @@ export default function PortalPage() {
         </div>
 
         {/* ── Mis pagos ── */}
-        <div style={card}>
+        <div style={{ ...card, marginBottom: 0 }}>
           <div style={cardHead}>💰 Mis pagos</div>
           <div style={{ padding: '4px 0' }}>
             {pagos.length === 0 ? (
@@ -554,7 +554,7 @@ export default function PortalPage() {
 
         {/* ── Fianza ── */}
         {estancia.fianza != null && (
-          <div style={card}>
+          <div style={{ ...card, marginBottom: 0 }}>
             <div style={cardHead}>🔐 Fianza</div>
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
@@ -588,10 +588,8 @@ export default function PortalPage() {
           </div>
         )}
 
-        </div>{/* fin grid 2 columnas */}
-
         {/* ── Mis incidencias + formulario ── */}
-        <div style={card}>
+        <div style={{ ...card, marginBottom: 0 }}>
           <div style={{ ...cardHead, justifyContent: 'space-between' }}>
             <span>🔧 Mis incidencias</span>
             <button
@@ -707,10 +705,11 @@ export default function PortalPage() {
             ) : (
               incidencias.map((inc, idx) => (
                 <div key={inc.id} style={{ padding: '12px 0', borderBottom: idx < incidencias.length - 1 ? `1px solid ${C.gray100}` : 'none' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '4px' }}>
                     <p style={{ margin: 0, fontWeight: '700', fontSize: '14px', color: C.gray900, textTransform: 'capitalize' }}>{inc.tipo}</p>
                     <span style={{
                       display: 'inline-block',
+                      alignSelf: 'flex-start',
                       padding: '2px 8px',
                       borderRadius: '20px',
                       fontSize: '10px',
@@ -719,8 +718,6 @@ export default function PortalPage() {
                       color: prioridadColor[inc.prioridad] || C.gray400,
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
-                      flexShrink: 0,
-                      marginLeft: '8px',
                     }}>{inc.prioridad}</span>
                   </div>
                   <p style={{ margin: '0 0 4px', fontSize: '13px', color: C.gray500 }}>{inc.descripcion}</p>
@@ -739,7 +736,7 @@ export default function PortalPage() {
             { tipo: 'normas_firmadas',  label: 'Normas de convivencia firmadas',     icon: '✍️' },
           ];
           return (
-            <div style={{ ...card, marginBottom: '14px' }}>
+            <div style={{ ...card, marginBottom: 0 }}>
               <div style={cardHead}>📁 Mis documentos</div>
               <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {TIPOS.map(({ tipo, label, icon }) => {
@@ -749,14 +746,14 @@ export default function PortalPage() {
                   const mostrarInput = !existente || reemplazar;
                   return (
                     <div key={tipo} style={{ padding: '12px 14px', border: `1px solid ${C.border}`, borderRadius: 10, background: existente && !reemplazar ? '#F0FDF4' : C.gray50 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: mostrarInput ? 10 : 0 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: mostrarInput ? 10 : 6 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: C.gray900, display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span>{icon}</span>{label}
                         </span>
                         {existente && !reemplazar && (
                           <button
                             onClick={() => setDocReemplazar(r => ({ ...r, [tipo]: true }))}
-                            style={{ fontSize: 11, fontWeight: 700, color: C.primary, background: '#EFF6FF', border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontFamily: FONT }}
+                            style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 700, color: C.primary, background: '#EFF6FF', border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontFamily: FONT }}
                           >Reemplazar</button>
                         )}
                       </div>
@@ -801,6 +798,8 @@ export default function PortalPage() {
             </div>
           );
         })()}
+
+        </div>{/* fin grid unificado */}
 
         {/* ── Cerrar sesión ── */}
         <button

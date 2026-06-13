@@ -310,6 +310,9 @@ export default function PortalPage() {
           <p style={{ margin: 0, fontSize: '13px', opacity: 0.85, fontWeight: '500' }}>{prop.nombre} &nbsp;·&nbsp; {uni.nombre}</p>
         </div>
 
+        {/* ── Grid 2 columnas: Guía + Estancia + Pagos ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ alignItems: 'start', marginBottom: '14px' }}>
+
         {/* ── Wiki del piso ── */}
         {(() => {
           const wiki = prop.wiki_piso;
@@ -443,6 +446,8 @@ export default function PortalPage() {
             )}
           </div>
         </div>
+
+        </div>{/* fin grid 2 columnas */}
 
         {/* ── Mis incidencias + formulario ── */}
         <div style={card}>

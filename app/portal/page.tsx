@@ -17,6 +17,8 @@ interface Estancia {
   renta_mensual: number;
   fecha_entrada: string;
   fecha_salida_prevista: string;
+  renovacion_estado: string | null;
+  renovacion_fecha: string | null;
   fianza: number | null;
   fianza_devuelta: boolean | null;
   fianza_devuelta_fecha: string | null;
@@ -148,6 +150,8 @@ export default function PortalPage() {
   const [incSubiendo, setIncSubiendo] = useState(false);
   const [incArchivo, setIncArchivo] = useState<File | null>(null);
   const [incExito, setIncExito] = useState(false);
+  const [renovacionEnviada, setRenovacionEnviada] = useState(false);
+  const [renovacionGuardando, setRenovacionGuardando] = useState(false);
   const [incError, setIncError] = useState('');
 
   const sb = createClient();
@@ -162,7 +166,7 @@ export default function PortalPage() {
 
     const { data: estanciaData, error: estanciaError } = await sb
       .from('estancias')
-      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, checkout_completado, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password, wiki_piso))')
+      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, renovacion_estado, renovacion_fecha, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, checkout_completado, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password, wiki_piso))')
       .eq('unidad_id', unidadId)
       .eq('estado', 'ACTIVA')
       .single();
@@ -333,6 +337,15 @@ export default function PortalPage() {
     }
   }
 
+  async function handleRenovacion(accion: 'PRORROGA_SOLICITADA' | 'SALIDA_CONFIRMADA') {
+    if (!estancia) return;
+    setRenovacionGuardando(true);
+    await sb.from('estancias').update({ renovacion_estado: accion, renovacion_fecha: new Date().toISOString() }).eq('id', estancia.id);
+    setEstancia(e => e ? { ...e, renovacion_estado: accion, renovacion_fecha: new Date().toISOString() } : e);
+    setRenovacionEnviada(true);
+    setRenovacionGuardando(false);
+  }
+
   // ── Login screen ────────────────────────────────────────────
   if (!estancia) {
     return (
@@ -414,6 +427,45 @@ export default function PortalPage() {
           <h1 style={{ margin: '0 0 6px', fontSize: '22px', fontWeight: '800', lineHeight: 1.2 }}>{inq.nombre} {inq.apellidos}</h1>
           <p style={{ margin: 0, fontSize: '13px', opacity: 0.85, fontWeight: '500' }}>{prop.nombre} &nbsp;·&nbsp; {uni.nombre}</p>
         </div>
+
+        {/* ── Banner renovación ── */}
+        {(() => {
+          if (!estancia.fecha_salida_prevista) return null;
+          if (estancia.renovacion_estado) return null;
+          const hoy = new Date();
+          hoy.setHours(0, 0, 0, 0);
+          const salida = new Date(estancia.fecha_salida_prevista);
+          salida.setHours(0, 0, 0, 0);
+          const diasRestantes = Math.ceil((salida.getTime() - hoy.getTime()) / 86400000);
+          if (diasRestantes < 0 || diasRestantes > 60) return null;
+          return (
+            <div style={{ background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: 14, padding: '18px 20px', marginBottom: 14 }}>
+              <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#92400E' }}>
+                📅 Tu contrato finaliza el{' '}
+                <strong>{salida.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</strong>.
+                ¿Qué quieres hacer?
+              </p>
+              {renovacionEnviada ? (
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#15803D', background: '#F0FDF4', padding: '10px 14px', borderRadius: 8 }}>
+                  ✓ Hemos recibido tu solicitud. Nos pondremos en contacto contigo.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => handleRenovacion('PRORROGA_SOLICITADA')}
+                    disabled={renovacionGuardando}
+                    style={{ padding: '10px 18px', background: C.primary, color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: renovacionGuardando ? 'not-allowed' : 'pointer', fontFamily: FONT }}
+                  >🔄 Solicitar prórroga</button>
+                  <button
+                    onClick={() => handleRenovacion('SALIDA_CONFIRMADA')}
+                    disabled={renovacionGuardando}
+                    style={{ padding: '10px 18px', background: 'white', color: '#92400E', border: '1.5px solid #FCD34D', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: renovacionGuardando ? 'not-allowed' : 'pointer', fontFamily: FONT }}
+                  >📦 Confirmar salida</button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ── Grid unificado 6 tarjetas ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">

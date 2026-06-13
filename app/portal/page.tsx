@@ -322,7 +322,7 @@ export default function PortalPage() {
                     La guía del piso aún no está disponible.
                   </p>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
                     {visibles.map(({ key, icon, titulo }) => {
                       const abierto = wikiAbierto === key;
                       return (

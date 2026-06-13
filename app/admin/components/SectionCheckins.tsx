@@ -466,8 +466,112 @@ function BajaModal({
   );
 }
 
-function DevolucionFianzaModal({
-  estancia,
+interface DocAdmin {
+  id: string;
+  tipo: string;
+  nombre: string;
+  url: string;
+  fecha: string;
+  verificado: boolean | null;
+}
+
+const TIPO_LABEL: Record<string, string> = {
+  dni:              'DNI / NIE / Pasaporte',
+  contrato_trabajo: 'Contrato de trabajo / Matrícula',
+  normas_firmadas:  'Normas de convivencia firmadas',
+};
+
+function DocModal({
+  estanciaId,
+  onClose,
+}: {
+  estanciaId: string;
+  onClose: () => void;
+}) {
+  const [docs, setDocs] = useState<DocAdmin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [abriendo, setAbriendo] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
+
+  useEffect(() => {
+    const sb = createClient();
+    sb.from('documentos')
+      .select('id, tipo, nombre, url, fecha, verificado')
+      .eq('estancia_id', estanciaId)
+      .order('fecha')
+      .then(({ data }) => { setDocs((data ?? []) as DocAdmin[]); setLoading(false); });
+  }, [estanciaId]);
+
+  async function handleVer(doc: DocAdmin) {
+    setAbriendo(doc.id);
+    const sb = createClient();
+    const { data, error } = await sb.storage.from('documentos').createSignedUrl(doc.url, 3600);
+    setAbriendo(null);
+    if (error || !data?.signedUrl) { alert('Error al generar enlace: ' + (error?.message ?? 'sin URL')); return; }
+    window.open(data.signedUrl, '_blank');
+  }
+
+  async function handleVerificado(doc: DocAdmin) {
+    setToggling(doc.id);
+    const sb = createClient();
+    await sb.from('documentos').update({ verificado: !doc.verificado }).eq('id', doc.id);
+    setDocs(ds => ds.map(d => d.id === doc.id ? { ...d, verificado: !d.verificado } : d));
+    setToggling(null);
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
+        <div style={{ padding: '18px 22px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1E4DB7' }}>📄 Documentos del inquilino</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: '14px 22px 22px' }}>
+          {loading && <p style={{ color: '#9CA3AF', fontSize: 13 }}>Cargando…</p>}
+          {!loading && docs.length === 0 && (
+            <p style={{ color: '#9CA3AF', fontSize: 13, margin: 0 }}>Sin documentos subidos para esta estancia.</p>
+          )}
+          {!loading && docs.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {docs.map(doc => (
+                <div key={doc.id} style={{ padding: '12px 14px', border: '1.5px solid #E2E6EF', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#111827' }}>
+                        {TIPO_LABEL[doc.tipo] ?? doc.tipo}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {doc.nombre} · {new Date(doc.fecha).toLocaleDateString('es-ES')}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      <button
+                        onClick={() => handleVer(doc)}
+                        disabled={abriendo === doc.id}
+                        style={{ background: '#EFF6FF', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#1E4DB7', cursor: 'pointer' }}
+                      >{abriendo === doc.id ? '…' : '🔗 Ver'}</button>
+                      <button
+                        onClick={() => handleVerificado(doc)}
+                        disabled={toggling === doc.id}
+                        style={{
+                          background: doc.verificado ? '#D1FAE5' : '#F3F4F6',
+                          border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700,
+                          color: doc.verificado ? '#27AE60' : '#6B7280', cursor: 'pointer',
+                        }}
+                      >{toggling === doc.id ? '…' : doc.verificado ? '✓ Verificado' : 'Verificar'}</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DevolucionFianzaModal({  estancia,
   onClose,
   onSaved,
 }: {
@@ -547,6 +651,7 @@ export default function SectionCheckins() {
   const [editEstancia, setEditEstancia] = useState<Estancia | null>(null);
   const [bajaEstancia, setBajaEstancia] = useState<Estancia | null>(null);
   const [devolucionFianzaEstancia, setDevolucionFianzaEstancia] = useState<Estancia | null>(null);
+  const [docEstanciaId, setDocEstanciaId] = useState<string | null>(null);
 
   const inqMap: Record<string, Inquilino> = {};
   for (const inq of inquilinos) inqMap[inq.id] = inq;
@@ -718,6 +823,10 @@ export default function SectionCheckins() {
                               onClick={() => { setEditEstancia(est); setModalOpen(true); }}
                               style={{ background: '#EFF6FF', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#1E4DB7', cursor: 'pointer' }}
                             >✏️ Editar</button>
+                            <button
+                              onClick={() => setDocEstanciaId(est.id)}
+                              style={{ background: '#F5F3FF', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#7C3AED', cursor: 'pointer' }}
+                            >📄 Docs</button>
                             {est.estado === 'ACTIVA' && (
                               <button
                                 onClick={() => abrirBaja(est)}
@@ -761,6 +870,13 @@ export default function SectionCheckins() {
           estancia={bajaEstancia}
           onClose={() => setBajaEstancia(null)}
           onSaved={() => { setBajaEstancia(null); load(); }}
+        />
+      )}
+
+      {docEstanciaId && (
+        <DocModal
+          estanciaId={docEstanciaId}
+          onClose={() => setDocEstanciaId(null)}
         />
       )}
 

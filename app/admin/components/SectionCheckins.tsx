@@ -815,6 +815,29 @@ export default function SectionCheckins() {
                                 style={{ background: '#F3F4F6', color: '#6B7280', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}
                               >📦 Salida confirmada{est.renovacion_fecha ? ' · ' + new Date(est.renovacion_fecha).toLocaleDateString('es-ES') : ''}</span>
                             )}
+                            {est.renovacion_estado && (() => {
+                              const hoy = new Date(); hoy.setHours(0,0,0,0);
+                              const limite = est.fecha_entrada ? new Date(new Date(est.fecha_entrada).setMonth(new Date(est.fecha_entrada).getMonth() + 11)) : null;
+                              if (!limite) return null;
+                              const diasRestantes = Math.ceil((limite.getTime() - hoy.getTime()) / 86400000);
+                              const critico = diasRestantes <= 30;
+                              return (
+                                <span style={{ fontSize: 10, fontWeight: 600, color: critico ? '#EF4444' : '#6B7280' }}>
+                                  {critico ? '⚠️' : '📅'} Límite legal: {limite.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                  {critico && ' (≤30 días)'}
+                                </span>
+                              );
+                            })()}
+                            {est.renovacion_estado && (
+                              <button
+                                onClick={async () => {
+                                  const sb = createClient();
+                                  await sb.from('estancias').update({ renovacion_estado: null, renovacion_fecha: null }).eq('id', est.id);
+                                  setEstancias(es => es.map(e => e.id === est.id ? { ...e, renovacion_estado: null, renovacion_fecha: null } : e));
+                                }}
+                                style={{ background: '#F0FDF4', border: 'none', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 700, color: '#27AE60', cursor: 'pointer' }}
+                              >✓ Atendido</button>
+                            )}
                           </div>
                         </td>
                         <td style={{ padding: '10px 12px' }}>

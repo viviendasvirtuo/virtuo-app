@@ -15,6 +15,12 @@ interface Estancia {
   fianza_retencion_motivo: string | null;
   renovacion_estado: string | null;
   renovacion_fecha: string | null;
+  renovacion_meses_solicitados: number | null;
+  renovacion_fecha_solicitada: string | null;
+  renovacion_hay_vacante: boolean | null;
+  renovacion_respuesta: string | null;
+  renovacion_respuesta_motivo: string | null;
+  renovacion_respuesta_fecha: string | null;
   unidad_id: string | null;
   inquilino_id: string | null;
   checkin_completado: boolean | null;
@@ -666,7 +672,7 @@ export default function SectionCheckins() {
 
     const [estRes, inqRes, uniRes] = await Promise.all([
       sb.from('estancias')
-        .select('id, estado, fecha_entrada, fecha_salida_prevista, renta_mensual, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, renovacion_estado, renovacion_fecha, unidad_id, inquilino_id, checkin_completado, checkout_completado, dia_pago, tipo_contrato')
+        .select('id, estado, fecha_entrada, fecha_salida_prevista, renta_mensual, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, renovacion_estado, renovacion_fecha, renovacion_meses_solicitados, renovacion_fecha_solicitada, renovacion_hay_vacante, renovacion_respuesta, renovacion_respuesta_motivo, renovacion_respuesta_fecha, unidad_id, inquilino_id, checkin_completado, checkout_completado, dia_pago, tipo_contrato')
         .order('fecha_entrada', { ascending: false }),
       sb.from('inquilinos')
         .select('id, nombre, apellidos')
@@ -803,12 +809,50 @@ export default function SectionCheckins() {
                                 ✓ Fianza devuelta
                               </span>
                             )}
-                            {est.renovacion_estado === 'PRORROGA_SOLICITADA' && (
-                              <span
-                                title={est.renovacion_fecha ? new Date(est.renovacion_fecha).toLocaleDateString('es-ES') : ''}
-                                style={{ background: '#DBEAFE', color: '#1E4DB7', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}
-                              >🔄 Prórroga solicitada{est.renovacion_fecha ? ' · ' + new Date(est.renovacion_fecha).toLocaleDateString('es-ES') : ''}</span>
-                            )}
+                            {est.renovacion_estado === 'PRORROGA_SOLICITADA' && (<>
+                              <span style={{ background: '#DBEAFE', color: '#1E4DB7', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}>
+                                🔄 Prórroga solicitada{est.renovacion_fecha ? ' · ' + new Date(est.renovacion_fecha).toLocaleDateString('es-ES') : ''}
+                              </span>
+                              {est.renovacion_meses_solicitados != null && est.renovacion_fecha_solicitada && (
+                                <span style={{ fontSize: 10, color: '#374151' }}>
+                                  Solicita <strong>{est.renovacion_meses_solicitados}</strong> mes{est.renovacion_meses_solicitados !== 1 ? 'es' : ''} más → hasta <strong>{new Date(est.renovacion_fecha_solicitada).toLocaleDateString('es-ES')}</strong>
+                                </span>
+                              )}
+                              {est.renovacion_hay_vacante === true && (
+                                <span style={{ fontSize: 10, fontWeight: 600, color: '#27AE60' }}>✓ Habitación libre para ese periodo</span>
+                              )}
+                              {est.renovacion_hay_vacante === false && (
+                                <span style={{ fontSize: 10, fontWeight: 600, color: '#EF4444' }}>⚠️ Ya hay otra reserva para parte de ese periodo</span>
+                              )}
+                              {est.renovacion_respuesta ? (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: est.renovacion_respuesta === 'APROBADA' ? '#27AE60' : '#EF4444' }}>
+                                  {est.renovacion_respuesta === 'APROBADA' ? '✅ Aprobada' : `❌ Denegada${est.renovacion_respuesta_motivo ? ': ' + est.renovacion_respuesta_motivo : ''}`}
+                                </span>
+                              ) : (
+                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                  <button
+                                    onClick={async () => {
+                                      const sb = createClient();
+                                      const payload: Record<string, unknown> = { renovacion_respuesta: 'APROBADA', renovacion_respuesta_fecha: new Date().toISOString() };
+                                      if (est.renovacion_fecha_solicitada) payload.fecha_salida_prevista = est.renovacion_fecha_solicitada;
+                                      await sb.from('estancias').update(payload).eq('id', est.id);
+                                      setEstancias(es => es.map(e => e.id === est.id ? { ...e, ...payload, renovacion_respuesta: 'APROBADA' } as Estancia : e));
+                                    }}
+                                    style={{ background: '#D1FAE5', border: 'none', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: '#27AE60', cursor: 'pointer' }}
+                                  >✅ Aprobar</button>
+                                  <button
+                                    onClick={async () => {
+                                      const motivo = prompt('Motivo de denegación (opcional):') ?? '';
+                                      const sb = createClient();
+                                      const payload = { renovacion_respuesta: 'DENEGADA', renovacion_respuesta_fecha: new Date().toISOString(), renovacion_respuesta_motivo: motivo || null };
+                                      await sb.from('estancias').update(payload).eq('id', est.id);
+                                      setEstancias(es => es.map(e => e.id === est.id ? { ...e, ...payload } as Estancia : e));
+                                    }}
+                                    style={{ background: '#FEE2E2', border: 'none', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: '#EF4444', cursor: 'pointer' }}
+                                  >❌ Denegar</button>
+                                </div>
+                              )}
+                            </>)}
                             {est.renovacion_estado === 'SALIDA_CONFIRMADA' && (
                               <span
                                 title={est.renovacion_fecha ? new Date(est.renovacion_fecha).toLocaleDateString('es-ES') : ''}
@@ -832,8 +876,9 @@ export default function SectionCheckins() {
                               <button
                                 onClick={async () => {
                                   const sb = createClient();
-                                  await sb.from('estancias').update({ renovacion_estado: null, renovacion_fecha: null }).eq('id', est.id);
-                                  setEstancias(es => es.map(e => e.id === est.id ? { ...e, renovacion_estado: null, renovacion_fecha: null } : e));
+                                  const nulls = { renovacion_estado: null, renovacion_fecha: null, renovacion_meses_solicitados: null, renovacion_fecha_solicitada: null, renovacion_hay_vacante: null, renovacion_respuesta: null, renovacion_respuesta_motivo: null, renovacion_respuesta_fecha: null };
+                                  await sb.from('estancias').update(nulls).eq('id', est.id);
+                                  setEstancias(es => es.map(e => e.id === est.id ? { ...e, ...nulls } as Estancia : e));
                                 }}
                                 style={{ background: '#F0FDF4', border: 'none', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 700, color: '#27AE60', cursor: 'pointer' }}
                               >✓ Atendido</button>

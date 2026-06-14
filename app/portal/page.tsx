@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface WikiPiso {
@@ -22,6 +22,9 @@ interface Estancia {
   renovacion_meses_solicitados: number | null;
   renovacion_fecha_solicitada: string | null;
   renovacion_hay_vacante: boolean | null;
+  renovacion_respuesta: string | null;
+  renovacion_respuesta_motivo: string | null;
+  renovacion_respuesta_fecha: string | null;
   fianza: number | null;
   fianza_devuelta: boolean | null;
   fianza_devuelta_fecha: string | null;
@@ -172,7 +175,7 @@ export default function PortalPage() {
 
     const { data: estanciaData, error: estanciaError } = await sb
       .from('estancias')
-      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, renovacion_estado, renovacion_fecha, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, checkout_completado, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password, wiki_piso))')
+      .select('id, renta_mensual, fecha_entrada, fecha_salida_prevista, renovacion_estado, renovacion_fecha, renovacion_fecha_solicitada, renovacion_respuesta, renovacion_respuesta_motivo, renovacion_respuesta_fecha, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, checkout_completado, inquilinos(id, nombre, apellidos, email), unidades(id, nombre, propiedad_id, propiedades(nombre, wifi_nombre, wifi_password, wiki_piso))')
       .eq('unidad_id', unidadId)
       .eq('estado', 'ACTIVA')
       .single();
@@ -469,7 +472,48 @@ export default function PortalPage() {
         {/* ── Banner renovación ── */}
         {(() => {
           if (!estancia.fecha_salida_prevista) return null;
-          if (estancia.renovacion_estado) return null;
+
+          // Si hay renovacion_estado activo, mostrar siempre el estado/respuesta
+          if (estancia.renovacion_estado) {
+            let contenido: React.ReactNode = null;
+            if (estancia.renovacion_estado === 'SALIDA_CONFIRMADA') {
+              contenido = (
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#15803D', background: '#F0FDF4', padding: '10px 14px', borderRadius: 8 }}>
+                  ✓ Hemos recibido tu confirmación de salida. Nos pondremos en contacto contigo.
+                </p>
+              );
+            } else if (estancia.renovacion_estado === 'PRORROGA_SOLICITADA') {
+              if (estancia.renovacion_respuesta === 'APROBADA') {
+                contenido = (
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#15803D', background: '#F0FDF4', padding: '10px 14px', borderRadius: 8 }}>
+                    ✅ ¡Prórroga aprobada! Tu nueva fecha de fin es <strong>{new Date(estancia.fecha_salida_prevista).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</strong>.
+                  </p>
+                );
+              } else if (estancia.renovacion_respuesta === 'DENEGADA') {
+                contenido = (
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#991B1B', background: '#FEF2F2', padding: '10px 14px', borderRadius: 8 }}>
+                    ❌ No ha sido posible esta vez.{estancia.renovacion_respuesta_motivo ? ' ' + estancia.renovacion_respuesta_motivo : ''}
+                  </p>
+                );
+              } else {
+                // Sin respuesta aún
+                contenido = (
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#92400E', background: '#FFFBEB', padding: '10px 14px', borderRadius: 8 }}>
+                    ⏳ Solicitud enviada{estancia.renovacion_fecha_solicitada ? ` (hasta ${new Date(estancia.renovacion_fecha_solicitada).toLocaleDateString('es-ES')})` : ''}. Te avisaremos cuando la revisemos.
+                  </p>
+                );
+              }
+            }
+            if (!contenido) return null;
+            return (
+              <div style={{ background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: 14, padding: '18px 20px', marginBottom: 14 }}>
+                <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: '#92400E' }}>📅 Estado de tu contrato</p>
+                {contenido}
+              </div>
+            );
+          }
+
+          // Sin renovacion_estado: mostrar banner de acción solo si la salida está dentro de 60 días
           const hoy = new Date(); hoy.setHours(0,0,0,0);
           const salida = new Date(estancia.fecha_salida_prevista); salida.setHours(0,0,0,0);
           const diasRestantes = Math.ceil((salida.getTime() - hoy.getTime()) / 86400000);

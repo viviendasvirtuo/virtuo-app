@@ -13,6 +13,8 @@ interface Estancia {
   fianza_devuelta: boolean | null;
   fianza_devuelta_fecha: string | null;
   fianza_retencion_motivo: string | null;
+  renovacion_estado: string | null;
+  renovacion_fecha: string | null;
   unidad_id: string | null;
   inquilino_id: string | null;
   checkin_completado: boolean | null;
@@ -664,7 +666,7 @@ export default function SectionCheckins() {
 
     const [estRes, inqRes, uniRes] = await Promise.all([
       sb.from('estancias')
-        .select('id, estado, fecha_entrada, fecha_salida_prevista, renta_mensual, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, unidad_id, inquilino_id, checkin_completado, checkout_completado, dia_pago, tipo_contrato')
+        .select('id, estado, fecha_entrada, fecha_salida_prevista, renta_mensual, fianza, fianza_devuelta, fianza_devuelta_fecha, fianza_retencion_motivo, renovacion_estado, renovacion_fecha, unidad_id, inquilino_id, checkin_completado, checkout_completado, dia_pago, tipo_contrato')
         .order('fecha_entrada', { ascending: false }),
       sb.from('inquilinos')
         .select('id, nombre, apellidos')
@@ -800,6 +802,18 @@ export default function SectionCheckins() {
                               <span style={{ background: '#D1FAE5', color: '#27AE60', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}>
                                 ✓ Fianza devuelta
                               </span>
+                            )}
+                            {est.renovacion_estado === 'PRORROGA_SOLICITADA' && (
+                              <span
+                                title={est.renovacion_fecha ? new Date(est.renovacion_fecha).toLocaleDateString('es-ES') : ''}
+                                style={{ background: '#DBEAFE', color: '#1E4DB7', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}
+                              >🔄 Prórroga solicitada{est.renovacion_fecha ? ' · ' + new Date(est.renovacion_fecha).toLocaleDateString('es-ES') : ''}</span>
+                            )}
+                            {est.renovacion_estado === 'SALIDA_CONFIRMADA' && (
+                              <span
+                                title={est.renovacion_fecha ? new Date(est.renovacion_fecha).toLocaleDateString('es-ES') : ''}
+                                style={{ background: '#F3F4F6', color: '#6B7280', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}
+                              >📦 Salida confirmada{est.renovacion_fecha ? ' · ' + new Date(est.renovacion_fecha).toLocaleDateString('es-ES') : ''}</span>
                             )}
                           </div>
                         </td>

@@ -19,6 +19,9 @@ interface Estancia {
   fecha_salida_prevista: string;
   renovacion_estado: string | null;
   renovacion_fecha: string | null;
+  renovacion_meses_solicitados: number | null;
+  renovacion_fecha_solicitada: string | null;
+  renovacion_hay_vacante: boolean | null;
   fianza: number | null;
   fianza_devuelta: boolean | null;
   fianza_devuelta_fecha: string | null;
@@ -152,6 +155,9 @@ export default function PortalPage() {
   const [incExito, setIncExito] = useState(false);
   const [renovacionEnviada, setRenovacionEnviada] = useState(false);
   const [renovacionGuardando, setRenovacionGuardando] = useState(false);
+  const [mostrarFormProrroga, setMostrarFormProrroga] = useState(false);
+  const [mesesSolicitados, setMesesSolicitados] = useState(1);
+  const [renovacionFechaSolicitada, setRenovacionFechaSolicitada] = useState<string | null>(null);
   const [incError, setIncError] = useState('');
 
   const sb = createClient();
@@ -337,12 +343,44 @@ export default function PortalPage() {
     }
   }
 
-  async function handleRenovacion(accion: 'PRORROGA_SOLICITADA' | 'SALIDA_CONFIRMADA') {
+  async function handleRenovacion(accion: 'SALIDA_CONFIRMADA') {
     if (!estancia) return;
     setRenovacionGuardando(true);
     await sb.from('estancias').update({ renovacion_estado: accion, renovacion_fecha: new Date().toISOString() }).eq('id', estancia.id);
     setEstancia(e => e ? { ...e, renovacion_estado: accion, renovacion_fecha: new Date().toISOString() } : e);
     setRenovacionEnviada(true);
+    setRenovacionGuardando(false);
+  }
+
+  async function handleSolicitarProrroga() {
+    if (!estancia) return;
+    setRenovacionGuardando(true);
+    const salida = new Date(estancia.fecha_salida_prevista);
+    const fechaSol = new Date(salida);
+    fechaSol.setMonth(fechaSol.getMonth() + mesesSolicitados);
+    const fechaSolStr = fechaSol.toISOString().slice(0, 10);
+
+    // Comprobar conflicto: otra estancia en la misma unidad que empiece entre salida actual y fecha solicitada
+    const { data: conflictos } = await sb.from('estancias')
+      .select('id')
+      .eq('unidad_id', estancia.unidades.id)
+      .neq('id', estancia.id)
+      .in('estado', ['RESERVA', 'CONTRATO', 'ACTIVA'])
+      .gte('fecha_entrada', estancia.fecha_salida_prevista)
+      .lte('fecha_entrada', fechaSolStr);
+    const hayVacante = !conflictos || conflictos.length === 0;
+
+    await sb.from('estancias').update({
+      renovacion_estado: 'PRORROGA_SOLICITADA',
+      renovacion_fecha: new Date().toISOString(),
+      renovacion_meses_solicitados: mesesSolicitados,
+      renovacion_fecha_solicitada: fechaSolStr,
+      renovacion_hay_vacante: hayVacante,
+    }).eq('id', estancia.id);
+
+    setRenovacionFechaSolicitada(fechaSolStr);
+    setRenovacionEnviada(true);
+    setMostrarFormProrroga(false);
     setRenovacionGuardando(false);
   }
 
@@ -432,12 +470,16 @@ export default function PortalPage() {
         {(() => {
           if (!estancia.fecha_salida_prevista) return null;
           if (estancia.renovacion_estado) return null;
-          const hoy = new Date();
-          hoy.setHours(0, 0, 0, 0);
-          const salida = new Date(estancia.fecha_salida_prevista);
-          salida.setHours(0, 0, 0, 0);
+          const hoy = new Date(); hoy.setHours(0,0,0,0);
+          const salida = new Date(estancia.fecha_salida_prevista); salida.setHours(0,0,0,0);
           const diasRestantes = Math.ceil((salida.getTime() - hoy.getTime()) / 86400000);
           if (diasRestantes < 0 || diasRestantes > 60) return null;
+
+          // Máximo meses = meses completos entre fecha_salida y (fecha_entrada + 11 meses)
+          const entrada = new Date(estancia.fecha_entrada);
+          const limite = new Date(entrada); limite.setMonth(limite.getMonth() + 11);
+          const maxMeses = Math.floor((limite.getTime() - salida.getTime()) / (30.44 * 86400000));
+
           return (
             <div style={{ background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: 14, padding: '18px 20px', marginBottom: 14 }}>
               <p style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#92400E' }}>
@@ -445,16 +487,52 @@ export default function PortalPage() {
                 <strong>{salida.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</strong>.
                 ¿Qué quieres hacer?
               </p>
+
               {renovacionEnviada ? (
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#15803D', background: '#F0FDF4', padding: '10px 14px', borderRadius: 8 }}>
-                  ✓ Hemos recibido tu solicitud. Nos pondremos en contacto contigo.
+                  ⏳ Solicitud enviada{renovacionFechaSolicitada ? ` (hasta ${new Date(renovacionFechaSolicitada).toLocaleDateString('es-ES')})` : ''}. Te avisaremos cuando la revisemos.
                 </p>
+              ) : mostrarFormProrroga ? (
+                <div style={{ background: '#FFF', border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 16px', marginBottom: 10 }}>
+                  {maxMeses <= 0 ? (
+                    <p style={{ margin: 0, fontSize: 13, color: C.red, fontWeight: 600 }}>
+                      Ya has alcanzado el límite legal de estancia (11 meses) y no es posible solicitar prórroga.
+                    </p>
+                  ) : (
+                    <>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: C.gray700, marginBottom: 8 }}>
+                        ¿Cuántos meses más necesitas?
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={maxMeses}
+                        value={mesesSolicitados}
+                        onChange={e => setMesesSolicitados(Math.min(maxMeses, Math.max(1, Number(e.target.value))))}
+                        style={{ width: 80, padding: '8px 10px', border: `2px solid ${C.border}`, borderRadius: 8, fontSize: 15, fontFamily: FONT, outline: 'none', marginBottom: 8 }}
+                      />
+                      <p style={{ margin: '0 0 12px', fontSize: 12, color: C.gray500 }}>
+                        Puedes solicitar hasta <strong>{maxMeses} mes{maxMeses !== 1 ? 'es' : ''}</strong> (límite legal: {limite.toLocaleDateString('es-ES')})
+                      </p>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          onClick={handleSolicitarProrroga}
+                          disabled={renovacionGuardando}
+                          style={{ padding: '9px 16px', background: C.primary, color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: renovacionGuardando ? 'not-allowed' : 'pointer', fontFamily: FONT }}
+                        >{renovacionGuardando ? 'Enviando…' : 'Confirmar solicitud'}</button>
+                        <button
+                          onClick={() => setMostrarFormProrroga(false)}
+                          style={{ padding: '9px 14px', background: 'white', color: C.gray500, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}
+                        >Cancelar</button>
+                      </div>
+                    </>
+                  )}
+                </div>
               ) : (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button
-                    onClick={() => handleRenovacion('PRORROGA_SOLICITADA')}
-                    disabled={renovacionGuardando}
-                    style={{ padding: '10px 18px', background: C.primary, color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: renovacionGuardando ? 'not-allowed' : 'pointer', fontFamily: FONT }}
+                    onClick={() => { setMostrarFormProrroga(true); setMesesSolicitados(Math.max(1, Math.min(maxMeses, 1))); }}
+                    style={{ padding: '10px 18px', background: C.primary, color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
                   >🔄 Solicitar prórroga</button>
                   <button
                     onClick={() => handleRenovacion('SALIDA_CONFIRMADA')}

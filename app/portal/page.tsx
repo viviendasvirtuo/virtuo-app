@@ -911,11 +911,9 @@ export default function PortalPage() {
         {/* ── Mis documentos ── */}
         {(() => {
           const TIPOS: { tipo: string; label: string; icon: string }[] = [
-            { tipo: 'dni',              label: 'DNI / NIE / Pasaporte',              icon: '🪪' },
-            { tipo: 'contrato_trabajo', label: 'Contrato de trabajo / Matrícula',    icon: '📄' },
-            { tipo: 'normas_firmadas',  label: 'Normas de convivencia firmadas',     icon: '✍️' },
+            { tipo: 'dni',              label: 'DNI / NIE / Pasaporte',           icon: '🪪' },
+            { tipo: 'contrato_trabajo', label: 'Contrato de trabajo / Matrícula', icon: '📄' },
           ];
-          const contratoDoc = docsExistentes.find(d => d.tipo === 'contrato');
           return (
             <div style={{ ...card, marginBottom: 0 }}>
               <div style={cardHead}>📁 Mis documentos</div>
@@ -975,6 +973,74 @@ export default function PortalPage() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Mis contratos ── */}
+        {(() => {
+          const normas = docsExistentes.find(d => d.tipo === 'normas_firmadas');
+          const contratoDoc = docsExistentes.find(d => d.tipo === 'contrato');
+          const tipoNormas = 'normas_firmadas';
+          const subiendo = docSubiendo[tipoNormas] ?? false;
+          const reemplazar = docReemplazar[tipoNormas] ?? false;
+          const mostrarInput = !normas || reemplazar;
+          return (
+            <div style={{ ...card, marginBottom: 0 }}>
+              <div style={cardHead}>📑 Mis contratos</div>
+              <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                {/* Normas de convivencia firmadas */}
+                <div style={{ padding: '12px 14px', border: `1px solid ${C.border}`, borderRadius: 10, background: normas && !reemplazar ? '#F0FDF4' : C.gray50 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: mostrarInput ? 10 : 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: C.gray900, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>✍️</span>Normas de convivencia firmadas
+                    </span>
+                    {normas && !reemplazar && (
+                      <button
+                        onClick={() => setDocReemplazar(r => ({ ...r, [tipoNormas]: true }))}
+                        style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 700, color: C.primary, background: '#EFF6FF', border: 'none', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontFamily: FONT }}
+                      >Reemplazar</button>
+                    )}
+                  </div>
+                  {normas && !reemplazar ? (
+                    <p style={{ margin: 0, fontSize: 12, color: '#15803D', fontWeight: 600 }}>
+                      ✓ Subido el {new Date(normas.fecha).toLocaleDateString('es-ES')} · <span style={{ fontWeight: 400, color: C.gray500 }}>{normas.nombre}</span>
+                    </p>
+                  ) : (
+                    <label style={{
+                      display: 'flex', alignItems: 'center', gap: 10, cursor: subiendo ? 'not-allowed' : 'pointer',
+                      padding: '9px 12px', border: `2px dashed ${C.border}`, borderRadius: 8,
+                      background: C.white, fontSize: 13, color: subiendo ? C.gray400 : C.gray500,
+                    }}>
+                      <span style={{ fontSize: 18 }}>{subiendo ? '⏳' : '📎'}</span>
+                      <span>{subiendo ? 'Subiendo...' : 'Toca para adjuntar (PDF o imagen)'}</span>
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        disabled={subiendo}
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleSubirDocumento(tipoNormas, f);
+                        }}
+                      />
+                    </label>
+                  )}
+                  {docError[tipoNormas] && (
+                    <p style={{ margin: '8px 0 0', fontSize: 12, color: C.red, background: '#FEF2F2', padding: '7px 10px', borderRadius: 7 }}>
+                      {docError[tipoNormas]}
+                    </p>
+                  )}
+                  {docExito[tipoNormas] && (
+                    <p style={{ margin: '8px 0 0', fontSize: 12, color: '#15803D', background: '#F0FDF4', padding: '7px 10px', borderRadius: 7, fontWeight: 600 }}>
+                      ✓ Documento guardado
+                    </p>
+                  )}
+                </div>
+
+                {/* Contrato de tu estancia (solo lectura, solo si existe) */}
                 {contratoDoc && (
                   <div style={{ padding: '12px 14px', border: `1px solid ${C.border}`, borderRadius: 10, background: '#F0FDF4' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: C.gray900, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
@@ -996,6 +1062,7 @@ export default function PortalPage() {
                     </div>
                   </div>
                 )}
+
               </div>
             </div>
           );

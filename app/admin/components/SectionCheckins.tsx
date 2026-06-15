@@ -484,31 +484,36 @@ interface DocAdmin {
 }
 
 const TIPO_LABEL: Record<string, string> = {
+  contrato:         'Contrato de la estancia',
   dni:              'DNI / NIE / Pasaporte',
   contrato_trabajo: 'Contrato de trabajo / Matrícula',
   normas_firmadas:  'Normas de convivencia firmadas',
 };
 
 function DocModal({
-  estanciaId,
+  estancia,
   onClose,
 }: {
-  estanciaId: string;
+  estancia: Estancia;
   onClose: () => void;
 }) {
   const [docs, setDocs] = useState<DocAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [abriendo, setAbriendo] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [contratoReemplazar, setContratoReemplazar] = useState(false);
+  const [contratoSubiendo, setContratoSubiendo] = useState(false);
+  const [contratoError, setContratoError] = useState('');
+
+  async function reloadDocs() {
+    const sb = createClient();
+    const { data } = await sb.from('documentos').select('id, tipo, nombre, url, fecha, verificado').eq('estancia_id', estancia.id).order('fecha');
+    setDocs((data ?? []) as DocAdmin[]);
+  }
 
   useEffect(() => {
-    const sb = createClient();
-    sb.from('documentos')
-      .select('id, tipo, nombre, url, fecha, verificado')
-      .eq('estancia_id', estanciaId)
-      .order('fecha')
-      .then(({ data }) => { setDocs((data ?? []) as DocAdmin[]); setLoading(false); });
-  }, [estanciaId]);
+    reloadDocs().then(() => setLoading(false));
+  }, [estancia.id]);
 
   async function handleVer(doc: DocAdmin) {
     setAbriendo(doc.id);
@@ -527,6 +532,37 @@ function DocModal({
     setToggling(null);
   }
 
+  async function handleSubirContrato(archivo: File) {
+    setContratoSubiendo(true);
+    setContratoError('');
+    const sb = createClient();
+    const ts = Date.now();
+    const safeName = archivo.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${estancia.unidad_id ?? estancia.id}/contrato_${ts}_${safeName}`;
+    const { error: uploadError } = await sb.storage.from('documentos').upload(storagePath, archivo, { upsert: true });
+    if (uploadError) { setContratoError('Error al subir: ' + uploadError.message); setContratoSubiendo(false); return; }
+    const { error: dbError } = await sb.from('documentos').upsert({
+      id: `DOC_contrato_${estancia.id}`,
+      inquilino_id: estancia.inquilino_id,
+      estancia_id: estancia.id,
+      tipo: 'contrato',
+      nombre: archivo.name,
+      url: storagePath,
+      fecha: new Date().toISOString().slice(0, 10),
+    }, { onConflict: 'id' });
+    if (dbError) { setContratoError('Error al guardar: ' + dbError.message); setContratoSubiendo(false); return; }
+    // Si renovacion_respuesta = 'APROBADA', actualizar a CONTRATO_FIRMADO y fecha_salida_prevista
+    if (estancia.renovacion_respuesta === 'APROBADA' && estancia.renovacion_fecha_solicitada) {
+      await sb.from('estancias').update({ renovacion_respuesta: 'CONTRATO_FIRMADO', fecha_salida_prevista: estancia.renovacion_fecha_solicitada }).eq('id', estancia.id);
+    }
+    await reloadDocs();
+    setContratoReemplazar(false);
+    setContratoSubiendo(false);
+  }
+
+  const contratoDoc = docs.find(d => d.tipo === 'contrato');
+  const otrosDocs = docs.filter(d => d.tipo !== 'contrato');
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 8px 40px rgba(30,77,183,0.18)' }}>
@@ -534,45 +570,50 @@ function DocModal({
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1E4DB7' }}>📄 Documentos del inquilino</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9CA3AF', lineHeight: 1 }}>×</button>
         </div>
-        <div style={{ padding: '14px 22px 22px' }}>
+        <div style={{ padding: '14px 22px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {loading && <p style={{ color: '#9CA3AF', fontSize: 13 }}>Cargando…</p>}
-          {!loading && docs.length === 0 && (
-            <p style={{ color: '#9CA3AF', fontSize: 13, margin: 0 }}>Sin documentos subidos para esta estancia.</p>
-          )}
-          {!loading && docs.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {docs.map(doc => (
-                <div key={doc.id} style={{ padding: '12px 14px', border: '1.5px solid #E2E6EF', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#111827' }}>
-                        {TIPO_LABEL[doc.tipo] ?? doc.tipo}
-                      </p>
-                      <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {doc.nombre} · {new Date(doc.fecha).toLocaleDateString('es-ES')}
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                      <button
-                        onClick={() => handleVer(doc)}
-                        disabled={abriendo === doc.id}
-                        style={{ background: '#EFF6FF', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#1E4DB7', cursor: 'pointer' }}
-                      >{abriendo === doc.id ? '…' : '🔗 Ver'}</button>
-                      <button
-                        onClick={() => handleVerificado(doc)}
-                        disabled={toggling === doc.id}
-                        style={{
-                          background: doc.verificado ? '#D1FAE5' : '#F3F4F6',
-                          border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700,
-                          color: doc.verificado ? '#27AE60' : '#6B7280', cursor: 'pointer',
-                        }}
-                      >{toggling === doc.id ? '…' : doc.verificado ? '✓ Verificado' : 'Verificar'}</button>
-                    </div>
+
+          {!loading && (<>
+            {/* ── Contrato (admin puede subir) ── */}
+            <div style={{ padding: '12px 14px', border: '1.5px solid #1E4DB7', borderRadius: 10, background: '#F8FAFF' }}>
+              <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700, color: '#1E4DB7' }}>📝 Contrato de la estancia <span style={{ fontSize: 10, fontWeight: 600, background: '#DBEAFE', color: '#1E4DB7', padding: '1px 6px', borderRadius: 4, marginLeft: 4 }}>Admin</span></p>
+              {contratoDoc && !contratoReemplazar ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                  <p style={{ margin: 0, fontSize: 12, color: '#374151' }}>
+                    ✓ Subido el {new Date(contratoDoc.fecha).toLocaleDateString('es-ES')} · <span style={{ color: '#9CA3AF' }}>{contratoDoc.nombre}</span>
+                  </p>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => handleVer(contratoDoc)} disabled={abriendo === contratoDoc.id} style={{ background: '#EFF6FF', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#1E4DB7', cursor: 'pointer' }}>{abriendo === contratoDoc.id ? '…' : '🔗 Ver'}</button>
+                    <button onClick={() => setContratoReemplazar(true)} style={{ background: '#F3F4F6', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#6B7280', cursor: 'pointer' }}>Reemplazar</button>
                   </div>
                 </div>
-              ))}
+              ) : (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: contratoSubiendo ? 'not-allowed' : 'pointer', padding: '8px 12px', border: '2px dashed #E2E6EF', borderRadius: 8, background: 'white', fontSize: 12, color: contratoSubiendo ? '#9CA3AF' : '#6B7280' }}>
+                  <span>{contratoSubiendo ? '⏳' : '📎'}</span>
+                  <span>{contratoSubiendo ? 'Subiendo...' : 'Subir contrato firmado (PDF o imagen)'}</span>
+                  <input type="file" accept="image/*,application/pdf" disabled={contratoSubiendo} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleSubirContrato(f); }} />
+                </label>
+              )}
+              {contratoError && <p style={{ margin: '6px 0 0', fontSize: 11, color: '#EF4444' }}>{contratoError}</p>}
             </div>
-          )}
+
+            {/* ── Documentos del inquilino ── */}
+            {otrosDocs.length === 0 && <p style={{ color: '#9CA3AF', fontSize: 13, margin: 0 }}>Sin documentos del inquilino.</p>}
+            {otrosDocs.map(doc => (
+              <div key={doc.id} style={{ padding: '12px 14px', border: '1.5px solid #E2E6EF', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#111827' }}>{TIPO_LABEL[doc.tipo] ?? doc.tipo}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.nombre} · {new Date(doc.fecha).toLocaleDateString('es-ES')}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button onClick={() => handleVer(doc)} disabled={abriendo === doc.id} style={{ background: '#EFF6FF', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#1E4DB7', cursor: 'pointer' }}>{abriendo === doc.id ? '…' : '🔗 Ver'}</button>
+                    <button onClick={() => handleVerificado(doc)} disabled={toggling === doc.id} style={{ background: doc.verificado ? '#D1FAE5' : '#F3F4F6', border: 'none', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: doc.verificado ? '#27AE60' : '#6B7280', cursor: 'pointer' }}>{toggling === doc.id ? '…' : doc.verificado ? '✓ Verificado' : 'Verificar'}</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>)}
         </div>
       </div>
     </div>
@@ -825,18 +866,21 @@ export default function SectionCheckins() {
                                 <span style={{ fontSize: 10, fontWeight: 600, color: '#EF4444' }}>⚠️ Ya hay otra reserva para parte de ese periodo</span>
                               )}
                               {est.renovacion_respuesta ? (
-                                <span style={{ fontSize: 10, fontWeight: 700, color: est.renovacion_respuesta === 'APROBADA' ? '#27AE60' : '#EF4444' }}>
-                                  {est.renovacion_respuesta === 'APROBADA' ? '✅ Aprobada' : `❌ Denegada${est.renovacion_respuesta_motivo ? ': ' + est.renovacion_respuesta_motivo : ''}`}
+                                <span style={{ fontSize: 10, fontWeight: 700, color: est.renovacion_respuesta === 'DENEGADA' ? '#EF4444' : '#27AE60' }}>
+                                  {est.renovacion_respuesta === 'APROBADA'
+                                    ? `✅ Aprobada — pendiente subir nuevo contrato (hasta ${est.renovacion_fecha_solicitada ? new Date(est.renovacion_fecha_solicitada).toLocaleDateString('es-ES') : '—'})`
+                                    : est.renovacion_respuesta === 'CONTRATO_FIRMADO'
+                                    ? '✅ Contrato firmado y fecha actualizada'
+                                    : `❌ Denegada${est.renovacion_respuesta_motivo ? ': ' + est.renovacion_respuesta_motivo : ''}`}
                                 </span>
                               ) : (
                                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                                   <button
                                     onClick={async () => {
                                       const sb = createClient();
-                                      const payload: Record<string, unknown> = { renovacion_respuesta: 'APROBADA', renovacion_respuesta_fecha: new Date().toISOString() };
-                                      if (est.renovacion_fecha_solicitada) payload.fecha_salida_prevista = est.renovacion_fecha_solicitada;
+                                      const payload = { renovacion_respuesta: 'APROBADA', renovacion_respuesta_fecha: new Date().toISOString() };
                                       await sb.from('estancias').update(payload).eq('id', est.id);
-                                      setEstancias(es => es.map(e => e.id === est.id ? { ...e, ...payload, renovacion_respuesta: 'APROBADA' } as Estancia : e));
+                                      setEstancias(es => es.map(e => e.id === est.id ? { ...e, ...payload } as Estancia : e));
                                     }}
                                     style={{ background: '#D1FAE5', border: 'none', borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 700, color: '#27AE60', cursor: 'pointer' }}
                                   >✅ Aprobar</button>
@@ -955,12 +999,11 @@ export default function SectionCheckins() {
         />
       )}
 
-      {docEstanciaId && (
-        <DocModal
-          estanciaId={docEstanciaId}
-          onClose={() => setDocEstanciaId(null)}
-        />
-      )}
+      {docEstanciaId && (() => {
+        const est = estancias.find(e => e.id === docEstanciaId);
+        if (!est) return null;
+        return <DocModal estancia={est} onClose={() => setDocEstanciaId(null)} />;
+      })()}
 
       {devolucionFianzaEstancia && (
         <DevolucionFianzaModal

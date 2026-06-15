@@ -58,7 +58,7 @@ interface Pago {
   fecha_pago: string | null;
 }
 
-interface DocRow { tipo: string; nombre: string; fecha: string; }
+interface DocRow { tipo: string; nombre: string; fecha: string; url: string; }
 
 interface Incidencia {
   id: string;
@@ -208,7 +208,7 @@ export default function PortalPage() {
 
     const { data: docsData } = await sb
       .from('documentos')
-      .select('tipo, nombre, fecha')
+      .select('tipo, nombre, fecha, url')
       .eq('estancia_id', estanciaData.id);
     setDocsExistentes((docsData as DocRow[]) || []);
 
@@ -332,7 +332,7 @@ export default function PortalPage() {
       }
       console.log('[docs] BD OK. Refrescando lista...');
 
-      const { data: docsData, error: fetchError } = await sb.from('documentos').select('tipo, nombre, fecha').eq('estancia_id', estancia.id);
+      const { data: docsData, error: fetchError } = await sb.from('documentos').select('tipo, nombre, fecha, url').eq('estancia_id', estancia.id);
       if (fetchError) console.error('[docs] Error al refrescar lista:', fetchError);
       setDocsExistentes((docsData as DocRow[]) || []);
       setDocSubiendo(s => ({ ...s, [tipo]: false }));
@@ -486,7 +486,13 @@ export default function PortalPage() {
               if (estancia.renovacion_respuesta === 'APROBADA') {
                 contenido = (
                   <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#15803D', background: '#F0FDF4', padding: '10px 14px', borderRadius: 8 }}>
-                    ✅ ¡Prórroga aprobada! Tu nueva fecha de fin es <strong>{new Date(estancia.fecha_salida_prevista).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</strong>.
+                    ✅ Prórroga aprobada. Te enviaremos el nuevo contrato para firmar en breve.
+                  </p>
+                );
+              } else if (estancia.renovacion_respuesta === 'CONTRATO_FIRMADO') {
+                contenido = (
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#15803D', background: '#F0FDF4', padding: '10px 14px', borderRadius: 8 }}>
+                    ✅ Tu nuevo contrato está listo, con fecha de fin <strong>{new Date(estancia.fecha_salida_prevista).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</strong>. Puedes verlo en la sección &apos;Mis documentos&apos;.
                   </p>
                 );
               } else if (estancia.renovacion_respuesta === 'DENEGADA') {
@@ -909,6 +915,7 @@ export default function PortalPage() {
             { tipo: 'contrato_trabajo', label: 'Contrato de trabajo / Matrícula',    icon: '📄' },
             { tipo: 'normas_firmadas',  label: 'Normas de convivencia firmadas',     icon: '✍️' },
           ];
+          const contratoDoc = docsExistentes.find(d => d.tipo === 'contrato');
           return (
             <div style={{ ...card, marginBottom: 0 }}>
               <div style={cardHead}>📁 Mis documentos</div>
@@ -968,6 +975,27 @@ export default function PortalPage() {
                     </div>
                   );
                 })}
+                {contratoDoc && (
+                  <div style={{ padding: '12px 14px', border: `1px solid ${C.border}`, borderRadius: 10, background: '#F0FDF4' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: C.gray900, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                      <span>📃</span>Contrato de tu estancia
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                      <p style={{ margin: 0, fontSize: 12, color: '#15803D', fontWeight: 600 }}>
+                        ✓ Disponible · <span style={{ fontWeight: 400, color: C.gray500 }}>{contratoDoc.nombre}</span> · {new Date(contratoDoc.fecha).toLocaleDateString('es-ES')}
+                      </p>
+                      <button
+                        onClick={async () => {
+                          const { data, error } = await sb.storage.from('documentos').createSignedUrl(contratoDoc.url, 60);
+                          if (!error && data?.signedUrl) {
+                            window.open(data.signedUrl, '_blank');
+                          }
+                        }}
+                        style={{ fontSize: 12, fontWeight: 700, color: C.primary, background: '#EFF6FF', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}
+                      >Ver</button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
